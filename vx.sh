@@ -416,7 +416,9 @@ function export_all_nodes() {
     cat "$LINK_FILE" | while read line; do 
         PROTOCOL=$(echo "$line" | cut -d ':' -f 1 | tr 'a-z' 'A-Z')
         echo -e "\n${purple}【 $PROTOCOL 协议 】${plain}"
-        echo -e "${green}🔗 链接:${plain} $line"
+      echo -e "${green}🔗 分享链接【双击下方链接快速纯净复制】:${plain}"
+        echo -e "${yellow}${line}${plain}\n"
+        echo -e "📱 专属节点二维码:"
         echo "$line" | qrencode -t UTF8
         echo -e "${cyan}-------------------------------------------------------------${plain}"
     done
