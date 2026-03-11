@@ -23,6 +23,17 @@ SERVICE_FILE="/etc/systemd/system/vx-core.service"
 
 [[ $EUID -ne 0 ]] && echo -e "${red}❌ 致命错误: 请使用 root 用户运行此引擎！${plain}" && exit 1
 
+# =========================================
+# 极客黑科技：全局指令自我注册模块
+# =========================================
+if [[ ! -f "/usr/local/bin/vx" ]]; then
+    curl -sL "https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh" -o /usr/local/bin/vx >/dev/null 2>&1
+    chmod +x /usr/local/bin/vx
+fi
+
+function show_logo() {
+    clear
+
 function show_logo() {
     clear
     echo -e "${cyan}██╗   ██╗███████╗██╗     ██████╗ ██╗  ██╗${plain}"
