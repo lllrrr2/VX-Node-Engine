@@ -268,6 +268,7 @@ EOF
     systemctl restart vx-core.service
     SHARE="hysteria2://${HYS_PASS}@${SERVER_IP}:${LISTEN_PORT}/?sni=${SNI_DOMAIN}&alpn=h3&insecure=1#Hys2-VeloX"
     sed -i '/^hysteria2:\/\//d' "$LINK_FILE" 2>/dev/null
+    echo "$SHARE" >> "$LINK_FILE"
     echo -e "\n${green}✅ Hysteria2 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【8】提取节点链接！${plain}"
 }
 
@@ -289,6 +290,7 @@ EOF
     systemctl restart vx-core.service
     SHARE="tuic://${UUID}:${TUIC_PASS}@${SERVER_IP}:${LISTEN_PORT}/?sni=${SNI_DOMAIN}&alpn=h3&congestion_control=bbr&insecure=1#TUIC-VeloX"
     sed -i '/^tuic:\/\//d' "$LINK_FILE" 2>/dev/null
+    echo "$SHARE" >> "$LINK_FILE"
     echo -e "\n${green}✅ TUIC v5 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【8】提取节点链接！${plain}"
 }
 
@@ -313,6 +315,7 @@ EOF
     VMESS_JSON=$(jq -n -c --arg v "2" --arg ps "VMess-VeloX" --arg add "$SERVER_IP" --arg port "$LISTEN_PORT" --arg id "$UUID" --arg net "ws" --arg host "" --arg path "$WS_PATH" --arg tls "" --arg sni "" '{v:$v, ps:$ps, add:$add, port:$port, id:$id, aid:"0", scy:"auto", net:$net, type:"none", host:$host, path:$path, tls:$tls, sni:$sni}')
     SHARE="vmess://$(echo -n "$VMESS_JSON" | base64 -w 0)"
     sed -i '/^vmess:\/\//d' "$LINK_FILE" 2>/dev/null
+    echo "$SHARE" >> "$LINK_FILE"
     echo -e "\n${green}✅ VMess-WS (纯净直连版) 装载完成！现在你可以直接把它套入 Cloudflare CDN。${plain}"
     echo -e "👉 ${yellow}提示: 请返回主菜单，按【8】提取节点链接！${plain}"
 }
@@ -338,6 +341,7 @@ EOF
 
     SHARE="trojan://${TROJAN_PASS}@${SERVER_IP}:${LISTEN_PORT}?security=reality&sni=${SNI_DOMAIN}&fp=chrome&pbk=${PUB_KEY}&sid=${SHORT_ID}&type=tcp&headerType=none#Trojan-Reality-VeloX"
     sed -i '/^trojan:\/\//d' "$LINK_FILE" 2>/dev/null
+    echo "$SHARE" >> "$LINK_FILE"
     echo -e "\n${green}✅ Trojan-Reality 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【8】提取节点链接！${plain}"
 }
 
