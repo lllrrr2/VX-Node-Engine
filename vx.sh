@@ -3,8 +3,7 @@
 # 项目: Velox Node Engine (VX) - 极简高阶代理核心生成器
 # 作者: pwenxiang51-wq
 # 博客: 222382.xyz
-# 版本: V1.0.0 (首发开源版)
-# 理念: 抛弃臃肿面条代码，回归纯粹。只用最优雅的架构生成最稳的节点。
+# 版本: V1.0.1 (加入智能自我注册唤醒指令)
 # =======================================================
 
 export LANG=en_US.UTF-8
@@ -21,6 +20,7 @@ BIN_FILE="/usr/local/bin/sing-box"
 JSON_FILE="$CONF_DIR/config.json"
 SERVICE_FILE="/etc/systemd/system/vx-core.service"
 
+# 权限拦截
 [[ $EUID -ne 0 ]] && echo -e "${red}❌ 致命错误: 请使用 root 用户运行此引擎！${plain}" && exit 1
 
 # =========================================
@@ -30,9 +30,6 @@ if [[ ! -f "/usr/local/bin/vx" ]]; then
     curl -sL "https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh" -o /usr/local/bin/vx >/dev/null 2>&1
     chmod +x /usr/local/bin/vx
 fi
-
-function show_logo() {
-    clear
 
 function show_logo() {
     clear
@@ -51,7 +48,6 @@ function check_sys() {
     echo -e "\n${yellow}>>> [1/5] 正在执行全系统智能嗅探与依赖装载...${plain}"
     mkdir -p "$CONF_DIR"
     
-    # 智能识别系统分支
     if [[ -f /etc/os-release ]]; then
         source /etc/os-release
         OS=$ID
@@ -59,7 +55,6 @@ function check_sys() {
         echo -e "${red}❌ 无法识别的操作系统！${plain}" && exit 1
     fi
 
-    # 跨平台依赖安装
     if ! command -v jq &> /dev/null || ! command -v qrencode &> /dev/null; then
         echo -e "${cyan}检测到缺失底层依赖，正在为 $OS 系统自动补全...${plain}"
         if [[ "${OS}" == "debian" || "${OS}" == "ubuntu" || "${OS}" == "kali" ]]; then
@@ -71,7 +66,7 @@ function check_sys() {
         elif [[ "${OS}" == "fedora" ]]; then
             dnf install -y jq qrencode curl wget openssl tar >/dev/null 2>&1
         else
-            echo -e "${red}❌ 暂不支持当前系统 $OS 的自动化依赖安装，请手动安装 jq, qrencode, curl。${plain}" && exit 1
+            echo -e "${red}❌ 暂不支持自动安装依赖，请手动安装 jq, qrencode, curl。${plain}" && exit 1
         fi
     fi
 }
@@ -184,6 +179,9 @@ function uninstall_vne() {
     rm -f $SERVICE_FILE
     systemctl daemon-reload >/dev/null 2>&1
     rm -rf $CONF_DIR $BIN_FILE
+    if [[ -f "/usr/local/bin/vx" ]]; then
+        rm -f /usr/local/bin/vx
+    fi
     echo -e "${green}✅ 卸载绝杀完成！内核及配置痕迹已被彻底抹除，系统已恢复纯净。${plain}"
 }
 
