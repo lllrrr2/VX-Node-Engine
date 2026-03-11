@@ -401,6 +401,42 @@ function install_all_nodes() {
 
 
 # ==================================================
+# ⚡ 底层调优: BBR 狂暴网络加速
+# ==================================================
+function enable_bbr() {
+    clear
+    echo -e "${cyan}======================================================================${plain}"
+    echo -e "               ⚡ 开启 BBR 底层网络狂暴加速 ⚡"
+    echo -e "${cyan}======================================================================${plain}"
+    
+    # 检查内核是否已开启 BBR
+    if sysctl net.ipv4.tcp_congestion_control | grep -q bbr; then
+        echo -e "\n${green}✅ 检测到 BBR 加速已处于开启状态，无需重复配置！${plain}"
+        read -p "👉 按回车返回大屏..." && return
+    fi
+
+    echo -e "${yellow}>>> 正在向系统内核注入 BBR 狂暴参数...${plain}"
+    # 清理可能存在的旧配置
+    sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+    sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+    
+    # 写入新参数
+    echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+    echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+    
+    # 应用生效
+    sysctl -p >/dev/null 2>&1
+
+    # 验证是否成功
+    if sysctl net.ipv4.tcp_congestion_control | grep -q bbr; then
+        echo -e "\n${green}✅ BBR 底层加速已成功激活！你的节点速度将获得质的飞跃！${plain}"
+    else
+        echo -e "\n${red}❌ BBR 激活失败，可能是当前系统的精简版内核不支持。${plain}"
+    fi
+    read -p "👉 按回车返回大屏..."
+}
+
+# ==================================================
 # 聚合提取中心
 # ==================================================
 function export_all_nodes() {
@@ -451,6 +487,7 @@ while true; do
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${purple}6.${plain} 🌍 附加挂载: Acme 真实证书极速申请"
     echo -e "  ${purple}7.${plain} 🚀 终极大招: 一键满血装载所有协议"
+    echo -e "  ${green}b.${plain} ⚡ 底层调优: BBR 狂暴网络加速"
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${cyan}8.${plain} 🖨️  ${green}一键提取全节点 (明文/Base64/二维码)${plain}"
     echo -e "  ${yellow}9.${plain} 🔄 OTA 热更新引擎       ${red}10.${plain} 🗑️  彻底粉碎卸载"
@@ -465,6 +502,7 @@ while true; do
         5) install_trojan_reality; read -p "👉 按回车返回大屏..." ;;
         6) apply_acme_cert ;;
        7) install_all_nodes ;;
+       b|B) enable_bbr ;;
         8) export_all_nodes; read -p "👉 提取完毕，按回车返回..." ;;
         9) update_vx ;;
         10) uninstall_vne; read -p "👉 按回车退出..."; break ;;
