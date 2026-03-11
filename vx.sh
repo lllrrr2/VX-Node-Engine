@@ -323,7 +323,7 @@ function install_trojan_reality() {
     check_sys && install_core && init_json && get_smart_ip
     echo -e "\n${yellow}>>> 锻造 Trojan-Reality (NPC进阶神级) 节点：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
-    read -p "👉 伪装域名 (直接回车默认 microsoft.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"microsoft.com"}
+    read -p "👉 伪装域名 (直接回车默认 microsoft.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"apple.com"}
 
     TROJAN_PASS=$($BIN_FILE generate rand --hex 16 | tr -d '\r\n')
     KEYS=$($BIN_FILE generate reality-keypair)
@@ -344,6 +344,61 @@ EOF
     echo "$SHARE" >> "$LINK_FILE"
     echo -e "\n${green}✅ Trojan-Reality 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【8】提取节点链接！${plain}"
 }
+
+
+# --- 🚀 终极杀器：一键大满贯全协议装载 ---
+function install_all_nodes() {
+    check_sys && install_core && init_json && get_smart_ip
+    clear
+    echo -e "${cyan}======================================================================${plain}"
+    echo -e "          🚀 正在启动【大满贯】全协议一键全自动装载引擎 🚀"
+    echo -e "${cyan}======================================================================${plain}"
+
+    # 智能域名路由
+    local COMMON_SNI="apple.com"
+    if [[ -f "$CERT_DIR/acme.crt" && -f "$CERT_DIR/acme_domain.txt" ]]; then
+        COMMON_SNI=$(cat "$CERT_DIR/acme_domain.txt" 2>/dev/null)
+        echo -e ">>> 🌐 检测到 ACME 证书，自动接管全协议域名: ${green}$COMMON_SNI${plain}"
+    else
+        echo -e ">>> ⚠️ 未检测到 ACME 证书，已降级为量子自签与默认域名: ${green}$COMMON_SNI${plain}"
+    fi
+
+    # 彻底核爆清空历史数据
+    > "$LINK_FILE"
+    echo '{"log":{"level":"info","timestamp":true},"inbounds":[],"outbounds":[{"type":"direct","tag":"direct"},{"type":"block","tag":"block"}]}' | jq . > "$JSON_FILE"
+
+    echo -e "\n${yellow}>>> [1/5] 正在极速压入 VLESS-Reality...${plain}"
+    local P1=$(shuf -i 10000-60000 -n 1); local U1=$($BIN_FILE generate uuid | tr -d '\r\n'); local K1=$($BIN_FILE generate reality-keypair); local PR1=$(echo "$K1" | awk '/PrivateKey/ {print $2}' | tr -d '\r\n'); local PU1=$(echo "$K1" | awk '/PublicKey/ {print $2}' | tr -d '\r\n'); local S1=$($BIN_FILE generate rand --hex 8 | tr -d '\r\n')
+    jq --argjson p "$P1" --arg u "$U1" --arg sni "apple.com" --arg pr "$PR1" --arg sid "$S1" '.inbounds += [{"type":"vless","tag":"vless-in","listen":"::","listen_port":$p,"users":[{"uuid":$u,"flow":"xtls-rprx-vision"}],"tls":{"enabled":true,"server_name":$sni,"reality":{"enabled":true,"handshake":{"server":$sni,"server_port":443},"private_key":$pr,"short_id":[$sid]}}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+    echo "vless://${U1}@${SERVER_IP}:${P1}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=apple.com&fp=chrome&pbk=${PU1}&sid=${S1}&type=tcp&headerType=none#VLESS-Reality-VeloX" >> "$LINK_FILE"
+
+    echo -e "${yellow}>>> [2/5] 正在极速压入 Hysteria2...${plain}"
+    local P2=$(shuf -i 10000-60000 -n 1); local PW2=$($BIN_FILE generate rand --hex 16 | tr -d '\r\n'); generate_cert_dynamic "$COMMON_SNI" >/dev/null 2>&1
+    jq --argjson p "$P2" --arg pw "$PW2" --arg crt "$CERT_DIR/cert.crt" --arg key "$CERT_DIR/private.key" '.inbounds += [{"type":"hysteria2","tag":"hy2-in","listen":"::","listen_port":$p,"users":[{"password":$pw}],"tls":{"enabled":true,"alpn":["h3"],"certificate_path":$crt,"key_path":$key}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+    echo "hysteria2://${PW2}@${SERVER_IP}:${P2}/?sni=${COMMON_SNI}&alpn=h3&insecure=1#Hys2-VeloX" >> "$LINK_FILE"
+
+    echo -e "${yellow}>>> [3/5] 正在极速压入 TUIC v5...${plain}"
+    local P3=$(shuf -i 10000-60000 -n 1); local U3=$($BIN_FILE generate uuid | tr -d '\r\n'); local PW3=$($BIN_FILE generate rand --hex 16 | tr -d '\r\n')
+    jq --argjson p "$P3" --arg u "$U3" --arg pw "$PW3" --arg crt "$CERT_DIR/cert.crt" --arg key "$CERT_DIR/private.key" '.inbounds += [{"type":"tuic","tag":"tuic-in","listen":"::","listen_port":$p,"users":[{"uuid":$u,"password":$pw}],"congestion_control":"bbr","tls":{"enabled":true,"alpn":["h3"],"certificate_path":$crt,"key_path":$key}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+    echo "tuic://${U3}:${PW3}@${SERVER_IP}:${P3}/?sni=${COMMON_SNI}&alpn=h3&congestion_control=bbr&insecure=1#TUIC-VeloX" >> "$LINK_FILE"
+
+    echo -e "${yellow}>>> [4/5] 正在极速压入 VMess-WS...${plain}"
+    local P4=$(shuf -i 10000-60000 -n 1); local U4=$($BIN_FILE generate uuid | tr -d '\r\n'); local W4="/vx-$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)"
+    jq --argjson p "$P4" --arg u "$U4" --arg w "$W4" '.inbounds += [{"type":"vmess","tag":"vmess-in","listen":"::","listen_port":$p,"users":[{"uuid":$u,"alterId":0}],"transport":{"type":"ws","path":$w}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+    local VM_J=$(jq -n -c --arg v "2" --arg ps "VMess-WS-VeloX" --arg add "$SERVER_IP" --arg port "$P4" --arg id "$U4" --arg net "ws" --arg host "" --arg path "$W4" --arg tls "" --arg sni "" '{v:$v, ps:$ps, add:$add, port:$port, id:$id, aid:"0", scy:"auto", net:$net, type:"none", host:$host, path:$path, tls:$tls, sni:$sni}')
+    echo "vmess://$(echo -n "$VM_J" | base64 -w 0)" >> "$LINK_FILE"
+
+    echo -e "${yellow}>>> [5/5] 正在极速压入 Trojan-Reality...${plain}"
+    local P5=$(shuf -i 10000-60000 -n 1); local PW5=$($BIN_FILE generate rand --hex 16 | tr -d '\r\n'); local K5=$($BIN_FILE generate reality-keypair); local PR5=$(echo "$K5" | awk '/PrivateKey/ {print $2}' | tr -d '\r\n'); local PU5=$(echo "$K5" | awk '/PublicKey/ {print $2}' | tr -d '\r\n'); local S5=$($BIN_FILE generate rand --hex 8 | tr -d '\r\n')
+    jq --argjson p "$P5" --arg pw "$PW5" --arg sni "apple.com" --arg pr "$PR5" --arg sid "$S5" '.inbounds += [{"type":"trojan","tag":"trojan-in","listen":"::","listen_port":$p,"users":[{"password":$pw}],"tls":{"enabled":true,"server_name":$sni,"reality":{"enabled":true,"handshake":{"server":$sni,"server_port":443},"private_key":$pr,"short_id":[$sid]}}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+    echo "trojan://${PW5}@${SERVER_IP}:${P5}?security=reality&sni=apple.com&fp=chrome&pbk=${PU5}&sid=${S5}&type=tcp&headerType=none#Trojan-Reality-VeloX" >> "$LINK_FILE"
+
+    systemctl restart vx-core.service
+    echo -e "\n${green}✅ 大满贯全量装载完成！五大神级协议已全部就绪！${plain}"
+    echo -e "👉 ${yellow}提示: 请按回车返回主菜单，直接按【8】提取所有节点链接！${plain}"
+    read -p ""
+}
+
 
 # ==================================================
 # 聚合提取中心
@@ -393,7 +448,7 @@ while true; do
     echo -e "  ${green}5.${plain} ➕ 新增/覆写 Trojan-Reality ${cyan}[神级✨]${plain}"
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${purple}6.${plain} 🌍 附加挂载: Acme 真实证书极速申请"
-    echo -e "  ${purple}7.${plain} ⚡ 底层调优: BBR 加速    ${yellow}[待开发]${plain}"
+    echo -e "  ${purple}7.${plain} 🚀 终极大招: 一键满血装载所有协议"
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${cyan}8.${plain} 🖨️  ${green}一键提取全节点 (明文/Base64/二维码)${plain}"
     echo -e "  ${yellow}9.${plain} 🔄 OTA 热更新引擎       ${red}10.${plain} 🗑️  彻底粉碎卸载"
@@ -406,8 +461,8 @@ while true; do
         3) install_tuic_v5; read -p "👉 按回车返回大屏..." ;;
         4) install_vmess_ws; read -p "👉 按回车返回大屏..." ;;
         5) install_trojan_reality; read -p "👉 按回车返回大屏..." ;;
-       6) apply_acme_cert ;;
-        7) echo -e "\n${yellow}🚧 架构师正在拼命打磨该模块，敬请期待！${plain}"; sleep 2 ;;
+        6) apply_acme_cert ;;
+       7) install_all_nodes ;;
         8) export_all_nodes; read -p "👉 提取完毕，按回车返回..." ;;
         9) update_vx ;;
         10) uninstall_vne; read -p "👉 按回车退出..."; break ;;
