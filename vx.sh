@@ -388,7 +388,7 @@ while true; do
     echo -e "  ${green}4.${plain} ➕ 新增/覆写 VMess-WS   ${cyan}[NEW✨]${plain}"
     echo -e "  ${green}5.${plain} ➕ 新增/覆写 Trojan-Reality ${cyan}[神级✨]${plain}"
     echo -e "----------------------------------------------------------------------"
-    echo -e "  ${purple}6.${plain} 🌍 附加挂载: Acme 真实证书极速申请"${yellow}${plain}"
+    echo -e "  ${purple}6.${plain} 🌍 附加挂载: Acme 真实证书极速申请"
     echo -e "  ${purple}7.${plain} ⚡ 底层调优: BBR 加速    ${yellow}[待开发]${plain}"
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${cyan}8.${plain} 🖨️  ${green}一键提取全节点 (明文/Base64/二维码)${plain}"
