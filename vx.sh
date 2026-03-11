@@ -323,7 +323,7 @@ while true; do
     echo -e "  ${green}2.${plain} ➕ 新增/覆写 Hysteria2  (支持自定域名)"
     echo -e "  ${green}3.${plain} ➕ 新增/覆写 TUIC v5    (支持自定域名)"
     echo -e "  ${green}4.${plain} ➕ 新增/覆写 VMess-WS   ${cyan}[NEW✨]${plain}"
-    echo -e "  ${green}5.${plain} ➕ 新增/覆写 SS-2022    ${cyan}[NEW✨]${plain}"
+    echo -e "  ${green}5.${plain} ➕ 新增/覆写 Trojan-Reality ${cyan}[神级✨]${plain}"
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${purple}6.${plain} 🌍 附加挂载: WARP 解锁  ${yellow}[待开发]${plain}"
     echo -e "  ${purple}7.${plain} ⚡ 底层调优: BBR 加速    ${yellow}[待开发]${plain}"
@@ -338,7 +338,7 @@ while true; do
         2) install_hysteria2; read -p "👉 按回车返回大屏..." ;;
         3) install_tuic_v5; read -p "👉 按回车返回大屏..." ;;
         4) install_vmess_ws; read -p "👉 按回车返回大屏..." ;;
-        5) install_ss_2022; read -p "👉 按回车返回大屏..." ;;
+        5) install_trojan_reality; read -p "👉 按回车返回大屏..." ;;
         6|7) echo -e "\n${yellow}🚧 架构师正在拼命打磨该模块，敬请期待！${plain}"; sleep 2 ;;
         8) export_all_nodes; read -p "👉 提取完毕，按回车返回..." ;;
         9) update_vx ;;
