@@ -27,7 +27,7 @@
 在你的终端执行以下神圣指令，开启极速节点之旅：
 
 ```bash
-bash <(curl -Ls [https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh](https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh)) && mv vx.sh /usr/local/bin/vx && chmod +x /usr/local/bin/vx
+bash <(curl -Ls https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh)
 ```
 提示：安装完成后，以后在任何目录只需输入 vx 即可召唤引擎菜单。
 
