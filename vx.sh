@@ -14,7 +14,7 @@ JSON_FILE="$CONF_DIR/config.json"
 LINK_FILE="$CONF_DIR/links.txt"
 SERVICE_FILE="/etc/systemd/system/vx-core.service"
 SCRIPT_URL="https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh"
-
+VX_VERSION="4.3.0"
 TEMP_UUID=$(cat /proc/sys/kernel/random/uuid)
 TEMP_PASS=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 16)
 
@@ -70,6 +70,15 @@ function show_dashboard() {
      fi
     fi
 
+    # 极速无感检测版本更新 (1.5秒超时)
+    REMOTE_VER=$(curl -s -m 1.5 "https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh" | grep -m 1 "^VX_VERSION=" | cut -d'"' -f2)
+    UPDATE_MSG=""
+    if [[ -n "$REMOTE_VER" && "$REMOTE_VER" != "$VX_VERSION" ]]; then
+        UPDATE_MSG="${yellow}🔔 发现新版 v${REMOTE_VER} (请按 9 升级)${plain}"
+    else
+        UPDATE_MSG="${green}✅ 最新版 (v${VX_VERSION})${plain}"
+    fi
+
     echo -e "${cyan}██╗   ██╗███████╗██╗     ██████╗ ██╗  ██╗${plain}"
     echo -e "${cyan}██║   ██║██╔════╝██║    ██╔═══██╗╚██╗██╔╝${plain}"
     echo -e "${blue}██║   ██║█████╗  ██║    ██║   ██║ ╚███╔╝ ${plain}"
@@ -77,10 +86,11 @@ function show_dashboard() {
     echo -e "${purple} ╚████╔╝ ███████╗███████╗╚██████╔╝██╔╝ ██╗${plain}"
     echo -e "${purple}  ╚═══╝  ╚══════╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝${plain}"
     echo -e "${cyan}======================================================================${plain}"
-    echo -e "         🚀 Velox Node Engine (VX) 终极控制枢纽 V4.3.0 🚀       "
+    echo -e "       🚀 Velox Node Engine (VX) 终极控制枢纽 V${VX_VERSION} 🚀       "
     echo -e "${cyan}======================================================================${plain}"
     echo -e "   👨‍💻 作者GitHub项目 : ${blue}github.com/pwenxiang51-wq${plain}"
     echo -e "   📝 作者Velo.x博客 : ${blue}222382.xyz${plain}"
+    echo -e " ⚡ 更新状态：$UPDATE_MSG"
     echo -e "${cyan}======================================================================${plain}"
     # 👆👆👆 ------------------------ 👆👆👆
     echo -e "⚙️  ${yellow}系统核心状态:${plain}"
