@@ -716,7 +716,13 @@ function update_ota() {
         echo -e "\n${yellow}💡 发现新版本，正在为您热更新核心...${plain}"
         
         # 下载最新内核 (自动适配 amd64)
-        local CPU_ARCH="amd64" # 假设你的 VPS 都是主流 amd64，如果需要兼容 arm，这里可以再加个判断
+        # 智能识别架构，防止下错内核导致断网 (兼容 AMD/ARM)
+        local ARCH_RAW=$(uname -m)
+        case "${ARCH_RAW}" in
+            x86_64) CPU_ARCH="amd64" ;;
+            aarch64) CPU_ARCH="arm64" ;;
+            *) CPU_ARCH="amd64" ;;
+        esac
         local DL_URL="https://github.com/SagerNet/sing-box/releases/download/v${LATEST_VER}/sing-box-${LATEST_VER}-linux-${CPU_ARCH}.tar.gz"
         
         wget -q "$DL_URL" -O /tmp/sing-box.tar.gz
