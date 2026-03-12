@@ -15,6 +15,9 @@ LINK_FILE="$CONF_DIR/links.txt"
 SERVICE_FILE="/etc/systemd/system/vx-core.service"
 SCRIPT_URL="https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh"
 
+TEMP_UUID=$(cat /proc/sys/kernel/random/uuid)
+TEMP_PASS=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 16)
+
 [[ $EUID -ne 0 ]] && echo -e "${red}❌ 致命错误: 请使用 root 用户运行此引擎！${plain}" && exit 1
 
 if [[ ! -f "/usr/local/bin/vx" ]]; then
@@ -230,9 +233,9 @@ function install_vless_reality() {
     check_sys && install_core && init_json && get_smart_ip
     echo -e "\n${yellow}>>> 锻造 VLESS-Reality 节点：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
+    read -p "👉 节点 UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
     read -p "👉 伪装域名 (直接回车默认 apple.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"apple.com"}
 
-    UUID=$($BIN_FILE generate uuid | tr -d '\r\n')
     KEYS=$($BIN_FILE generate reality-keypair)
     PRV_KEY=$(echo "$KEYS" | awk '/PrivateKey/ {print $2}' | tr -d '\r\n')
     PUB_KEY=$(echo "$KEYS" | awk '/PublicKey/ {print $2}' | tr -d '\r\n')
@@ -255,8 +258,9 @@ function install_hysteria2() {
     check_sys && install_core && init_json && get_smart_ip
     echo -e "\n${yellow}>>> 锻造 Hysteria2 节点：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
-    read -p "👉 伪装域名 (直接回车默认 bing.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"bing.com"}
-    read -p "👉 核心密码 (直接回车随机): " HYS_PASS; HYS_PASS=${HYS_PASS:-$($BIN_FILE generate rand --hex 16 | tr -d '\r\n')}
+    read -p "👉 节点密码 (直接回车随机): " HYS_PASS; HYS_PASS=${HYS_PASS:-$TEMP_PASS}
+    read -p "👉 绑定域名 (直接回车默认 bing.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"bing.com"}
+    generate_cert_dynamic "$SNI_DOMAIN"
 
     generate_cert_dynamic "$SNI_DOMAIN"
     cat << EOF > /tmp/vx_tmp.json
@@ -276,10 +280,12 @@ function install_tuic_v5() {
     check_sys && install_core && init_json && get_smart_ip
     echo -e "\n${yellow}>>> 锻造 TUIC v5 节点：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
-    read -p "👉 伪装域名 (直接回车默认 cloudflare.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"cloudflare.com"}
-    read -p "👉 核心密码 (直接回车随机): " TUIC_PASS; TUIC_PASS=${TUIC_PASS:-$($BIN_FILE generate rand --hex 16 | tr -d '\r\n')}
-    UUID=$($BIN_FILE generate uuid | tr -d '\r\n')
-
+    read -p "👉 节点 UUID (直接回车随机): " TUIC_UUID; TUIC_UUID=${TUIC_UUID:-$TEMP_UUID}
+    read -p "👉 节点密码 (直接回车随机): " TUIC_PASS; TUIC_PASS=${TUIC_PASS:-$TEMP_PASS}
+    read -p "👉 绑定域名 (直接回车默认 bing.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"bing.com"}
+    generate_cert_dynamic "$SNI_DOMAIN"
+    generate_cert_dynamic "$SNI_DOMAIN"
+  
     generate_cert_dynamic "$SNI_DOMAIN"
     cat << EOF > /tmp/vx_tmp.json
 {"type":"tuic","tag":"tuic-in","listen":"::","listen_port":$LISTEN_PORT,"users":[{"uuid":"$UUID","password":"$TUIC_PASS"}],"congestion_control":"bbr","tls":{"enabled":true,"alpn":["h3"],"certificate_path":"$CERT_DIR/cert.crt","key_path":"$CERT_DIR/private.key"}}
@@ -297,9 +303,9 @@ EOF
 function install_vmess_ws() {
     check_sys && install_core && init_json && get_smart_ip
     echo -e "\n${yellow}>>> 锻造 VMess-WS (纯明文直连/CDN神盾) 节点：${plain}"
-    read -p "👉 监听端口 (直接回车随机, 若要套CF CDN推荐填 80/8080): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-8080}
+    read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
+    read -p "👉 节点 UUID (直接回车随机): " VMESS_UUID; VMESS_UUID=${VMESS_UUID:-$TEMP_UUID}
     
-    UUID=$($BIN_FILE generate uuid | tr -d '\r\n')
     WS_PATH="/vx-$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)"
 
     # 移除了自签证书，改为纯净 WS 监听
@@ -322,10 +328,11 @@ EOF
 function install_trojan_reality() {
     check_sys && install_core && init_json && get_smart_ip
     echo -e "\n${yellow}>>> 锻造 Trojan-Reality (NPC进阶神级) 节点：${plain}"
+   # 5. Trojan-Reality 自定义逻辑
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
+    read -p "👉 节点密码 (直接回车随机): " TROJAN_PASS; TROJAN_PASS=${TROJAN_PASS:-$TEMP_PASS}
     read -p "👉 伪装域名 (直接回车默认 apple.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"apple.com"}
 
-    TROJAN_PASS=$($BIN_FILE generate rand --hex 16 | tr -d '\r\n')
     KEYS=$($BIN_FILE generate reality-keypair)
     PRV_KEY=$(echo "$KEYS" | awk '/PrivateKey/ {print $2}' | tr -d '\r\n')
     PUB_KEY=$(echo "$KEYS" | awk '/PublicKey/ {print $2}' | tr -d '\r\n')
@@ -354,42 +361,55 @@ function install_all_nodes() {
     echo -e "          🚀 正在启动【大满贯】全协议一键全自动装载引擎 🚀"
     echo -e "${cyan}======================================================================${plain}"
 
-    # 智能域名路由
+    # 1. 智能发证引导
+    if [[ ! -f "$CERT_DIR/acme.crt" ]]; then
+        echo -e "${yellow}⚠️ 检测到您尚未申请 ACME 真实证书！${plain}"
+        read -p "❓ 是否先去申请真实域名证书？(输入 y 申请，直接回车则使用自签): " DO_ACME
+        if [[ "$DO_ACME" == "y" || "$DO_ACME" == "Y" ]]; then
+            apply_acme_cert
+            if [[ ! -f "$CERT_DIR/acme.crt" ]]; then
+                echo -e "${red}❌ 证书申请失败，将降级为自签模式继续安装...${plain}"; sleep 2
+            fi
+        fi
+    fi
+
+    # 2. 智能域名路由
     local COMMON_SNI="apple.com"
     if [[ -f "$CERT_DIR/acme.crt" && -f "$CERT_DIR/acme_domain.txt" ]]; then
         COMMON_SNI=$(cat "$CERT_DIR/acme_domain.txt" 2>/dev/null)
         echo -e ">>> 🌐 检测到 ACME 证书，自动接管全协议域名: ${green}$COMMON_SNI${plain}"
     else
-        echo -e ">>> ⚠️ 未检测到 ACME 证书，已降级为量子自签与默认域名: ${green}$COMMON_SNI${plain}"
+        echo -e ">>> ⚠️ 未部署真实证书，已降级为量子自签与默认伪装: ${green}$COMMON_SNI${plain}"
     fi
 
-    # 彻底核爆清空历史数据
+    # 3. 彻底核爆清空历史数据
     > "$LINK_FILE"
     echo '{"log":{"level":"info","timestamp":true},"inbounds":[],"outbounds":[{"type":"direct","tag":"direct"},{"type":"block","tag":"block"}]}' | jq . > "$JSON_FILE"
 
+    # 4. 极速压入节点 (全部自动调用顶部的 $TEMP_UUID 和 $TEMP_PASS)
     echo -e "\n${yellow}>>> [1/5] 正在极速压入 VLESS-Reality...${plain}"
-    local P1=$(shuf -i 10000-60000 -n 1); local U1=$($BIN_FILE generate uuid | tr -d '\r\n'); local K1=$($BIN_FILE generate reality-keypair); local PR1=$(echo "$K1" | awk '/PrivateKey/ {print $2}' | tr -d '\r\n'); local PU1=$(echo "$K1" | awk '/PublicKey/ {print $2}' | tr -d '\r\n'); local S1=$($BIN_FILE generate rand --hex 8 | tr -d '\r\n')
+    local P1=$(shuf -i 10000-60000 -n 1); local U1=$TEMP_UUID; local K1=$($BIN_FILE generate reality-keypair); local PR1=$(echo "$K1" | awk '/PrivateKey/ {print $2}' | tr -d '\r\n'); local PU1=$(echo "$K1" | awk '/PublicKey/ {print $2}' | tr -d '\r\n'); local S1=$($BIN_FILE generate rand --hex 8 | tr -d '\r\n')
     jq --argjson p "$P1" --arg u "$U1" --arg sni "apple.com" --arg pr "$PR1" --arg sid "$S1" '.inbounds += [{"type":"vless","tag":"vless-in","listen":"::","listen_port":$p,"users":[{"uuid":$u,"flow":"xtls-rprx-vision"}],"tls":{"enabled":true,"server_name":$sni,"reality":{"enabled":true,"handshake":{"server":$sni,"server_port":443},"private_key":$pr,"short_id":[$sid]}}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
     echo "vless://${U1}@${SERVER_IP}:${P1}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=apple.com&fp=chrome&pbk=${PU1}&sid=${S1}&type=tcp&headerType=none#VLESS-Reality-VeloX" >> "$LINK_FILE"
 
     echo -e "${yellow}>>> [2/5] 正在极速压入 Hysteria2...${plain}"
-    local P2=$(shuf -i 10000-60000 -n 1); local PW2=$($BIN_FILE generate rand --hex 16 | tr -d '\r\n'); generate_cert_dynamic "$COMMON_SNI" >/dev/null 2>&1
+    local P2=$(shuf -i 10000-60000 -n 1); local PW2=$TEMP_PASS; generate_cert_dynamic "$COMMON_SNI" >/dev/null 2>&1
     jq --argjson p "$P2" --arg pw "$PW2" --arg crt "$CERT_DIR/cert.crt" --arg key "$CERT_DIR/private.key" '.inbounds += [{"type":"hysteria2","tag":"hy2-in","listen":"::","listen_port":$p,"users":[{"password":$pw}],"tls":{"enabled":true,"alpn":["h3"],"certificate_path":$crt,"key_path":$key}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
     echo "hysteria2://${PW2}@${SERVER_IP}:${P2}/?sni=${COMMON_SNI}&alpn=h3&insecure=1#Hys2-VeloX" >> "$LINK_FILE"
 
     echo -e "${yellow}>>> [3/5] 正在极速压入 TUIC v5...${plain}"
-    local P3=$(shuf -i 10000-60000 -n 1); local U3=$($BIN_FILE generate uuid | tr -d '\r\n'); local PW3=$($BIN_FILE generate rand --hex 16 | tr -d '\r\n')
+    local P3=$(shuf -i 10000-60000 -n 1); local U3=$TEMP_UUID; local PW3=$TEMP_PASS
     jq --argjson p "$P3" --arg u "$U3" --arg pw "$PW3" --arg crt "$CERT_DIR/cert.crt" --arg key "$CERT_DIR/private.key" '.inbounds += [{"type":"tuic","tag":"tuic-in","listen":"::","listen_port":$p,"users":[{"uuid":$u,"password":$pw}],"congestion_control":"bbr","tls":{"enabled":true,"alpn":["h3"],"certificate_path":$crt,"key_path":$key}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
     echo "tuic://${U3}:${PW3}@${SERVER_IP}:${P3}/?sni=${COMMON_SNI}&alpn=h3&congestion_control=bbr&insecure=1#TUIC-VeloX" >> "$LINK_FILE"
 
     echo -e "${yellow}>>> [4/5] 正在极速压入 VMess-WS...${plain}"
-    local P4=$(shuf -i 10000-60000 -n 1); local U4=$($BIN_FILE generate uuid | tr -d '\r\n'); local W4="/vx-$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)"
+    local P4=$(shuf -i 10000-60000 -n 1); local U4=$TEMP_UUID; local W4="/vx-$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)"
     jq --argjson p "$P4" --arg u "$U4" --arg w "$W4" '.inbounds += [{"type":"vmess","tag":"vmess-in","listen":"::","listen_port":$p,"users":[{"uuid":$u,"alterId":0}],"transport":{"type":"ws","path":$w}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
     local VM_J=$(jq -n -c --arg v "2" --arg ps "VMess-WS-VeloX" --arg add "$SERVER_IP" --arg port "$P4" --arg id "$U4" --arg net "ws" --arg host "" --arg path "$W4" --arg tls "" --arg sni "" '{v:$v, ps:$ps, add:$add, port:$port, id:$id, aid:"0", scy:"auto", net:$net, type:"none", host:$host, path:$path, tls:$tls, sni:$sni}')
     echo "vmess://$(echo -n "$VM_J" | base64 -w 0)" >> "$LINK_FILE"
 
     echo -e "${yellow}>>> [5/5] 正在极速压入 Trojan-Reality...${plain}"
-    local P5=$(shuf -i 10000-60000 -n 1); local PW5=$($BIN_FILE generate rand --hex 16 | tr -d '\r\n'); local K5=$($BIN_FILE generate reality-keypair); local PR5=$(echo "$K5" | awk '/PrivateKey/ {print $2}' | tr -d '\r\n'); local PU5=$(echo "$K5" | awk '/PublicKey/ {print $2}' | tr -d '\r\n'); local S5=$($BIN_FILE generate rand --hex 8 | tr -d '\r\n')
+    local P5=$(shuf -i 10000-60000 -n 1); local PW5=$TEMP_PASS; local K5=$($BIN_FILE generate reality-keypair); local PR5=$(echo "$K5" | awk '/PrivateKey/ {print $2}' | tr -d '\r\n'); local PU5=$(echo "$K5" | awk '/PublicKey/ {print $2}' | tr -d '\r\n'); local S5=$($BIN_FILE generate rand --hex 8 | tr -d '\r\n')
     jq --argjson p "$P5" --arg pw "$PW5" --arg sni "apple.com" --arg pr "$PR5" --arg sid "$S5" '.inbounds += [{"type":"trojan","tag":"trojan-in","listen":"::","listen_port":$p,"users":[{"password":$pw}],"tls":{"enabled":true,"server_name":$sni,"reality":{"enabled":true,"handshake":{"server":$sni,"server_port":443},"private_key":$pr,"short_id":[$sid]}}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
     echo "trojan://${PW5}@${SERVER_IP}:${P5}?security=reality&sni=apple.com&fp=chrome&pbk=${PU5}&sid=${S5}&type=tcp&headerType=none#Trojan-Reality-VeloX" >> "$LINK_FILE"
 
