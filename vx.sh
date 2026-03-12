@@ -456,6 +456,76 @@ function enable_bbr() {
     read -p "👉 按回车返回大屏..."
 }
 
+
+# ==================================================
+# 🛡️ 附加挂载: WARP 智能优选解锁 (流媒体/AI 专线)
+# ==================================================
+function enable_warp() {
+    clear
+    echo -e "${cyan}======================================================================${plain}"
+    echo -e "         🛡️ 部署 Cloudflare WARP 官方客户端 (安全 SOCKS5 分流模式)"
+    echo -e "${cyan}======================================================================${plain}"
+
+    # 1. 安全安装官方客户端
+    if ! command -v warp-cli &> /dev/null; then
+        echo -e "${yellow}>>> [1/4] 正在安全拉取 Cloudflare 官方组件 (不影响系统网络)...${plain}"
+        apt-get update -y >/dev/null 2>&1
+        apt-get install -y curl gnupg lsb-release >/dev/null 2>&1
+        curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list >/dev/null
+        apt-get update -y >/dev/null 2>&1
+        apt-get install cloudflare-warp -y >/dev/null 2>&1
+    else
+        echo -e "${green}✅ WARP 客户端已存在，跳过安装。${plain}"
+    fi
+
+    # 2. 隔离化配置 (绝对防失联)
+    echo -e "${yellow}>>> [2/4] 正在建立本地 SOCKS5 安全隔离隧道...${plain}"
+    # 强制设置为 Proxy 模式，绝对不碰系统全局路由
+    warp-cli --accept-tos registration new >/dev/null 2>&1 || warp-cli registration new >/dev/null 2>&1
+    warp-cli --accept-tos mode proxy >/dev/null 2>&1 || warp-cli mode proxy >/dev/null 2>&1
+    warp-cli --accept-tos proxy port 40000 >/dev/null 2>&1 || warp-cli proxy port 40000 >/dev/null 2>&1
+    warp-cli --accept-tos connect >/dev/null 2>&1 || warp-cli connect >/dev/null 2>&1
+    
+    echo -e ">>> 正在等待隧道连通，请稍候 5 秒..."
+    sleep 5
+
+    if curl -sx socks5h://127.0.0.1:40000 https://www.cloudflare.com/cdn-cgi/trace | grep -q "warp="; then
+        echo -e "${green}✅ WARP 隔离通道建立成功！(本地监听端口: 40000)${plain}"
+    else
+        echo -e "${red}❌ WARP 通道建立失败！这可能是由于当前 VPS 架构受限 (如部分 LXC/OpenVZ 架构)。${plain}"
+        echo -e "${yellow}提示: 不影响核心节点运行，按回车返回大屏...${plain}"
+        read -p "" && return
+    fi
+
+    # 3. 注入 Sing-box 神经元路由
+    echo -e "${yellow}>>> [3/4] 正在向 Sing-box 注入 AI 与流媒体精准分流规则...${plain}"
+
+    # 确保 route 结构存在
+    if ! jq -e '.route' "$JSON_FILE" >/dev/null; then
+        jq '. += {"route": {"rules": []}}' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+    fi
+
+    # 清理历史规则
+    jq 'del(.outbounds[] | select(.tag == "warp-socks")) | del(.route.rules[] | select(.outbound == "warp-socks"))' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+
+    # 挂载 SOCKS5 出口
+    jq '.outbounds += [{"type":"socks","tag":"warp-socks","server":"127.0.0.1","server_port":40000}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+
+    # 核心分流规则：收录全网最严苛的流媒体与 AI 域名
+    # 包括: ChatGPT, Claude, Gemini, Netflix, Disney+, Spotify, Hulu, HBO 等
+    jq '.route.rules += [{"domain_suffix":["openai.com","chatgpt.com","ai.com","anthropic.com","claude.ai","gemini.google.com","netflix.com","netflix.net","nflximg.net","nflxvideo.net","nflxext.com","disneyplus.com","dssott.com","spotify.com","hulu.com","hbomax.com","max.com"],"outbound":"warp-socks"}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
+
+    # 4. 重启生效
+    echo -e "${yellow}>>> [4/4] 正在重启引擎，激活无缝解锁矩阵...${plain}"
+    systemctl restart vx-core.service
+
+    echo -e "\n${green}🎉 WARP 智能分流部署完美竣工！${plain}"
+    echo -e "${cyan}💡 开源提示: 此方案为应用层分流，绝对不会导致您的 VPS 断网或失联，请放心使用！${plain}"
+    read -p "👉 按回车返回大屏..."
+}
+
+
 # ==================================================
 # 聚合提取中心
 # ==================================================
@@ -508,6 +578,7 @@ while true; do
     echo -e "  ${purple}6.${plain} 🌍 附加挂载: Acme 真实证书极速申请"
     echo -e "  ${purple}7.${plain} 🚀 终极大招: 一键满血装载所有协议"
     echo -e "  ${green}b.${plain} ⚡ 底层调优: BBR 狂暴网络加速"
+    echo -e "  ${green}w.${plain} 🛡️ 附加挂载: WARP 优选解锁 (Netflix/ChatGPT 等)"
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${cyan}8.${plain} 🖨️  ${green}一键提取全节点 (明文/Base64/二维码)${plain}"
     echo -e "  ${yellow}9.${plain} 🔄 OTA 热更新引擎       ${red}10.${plain} 🗑️  彻底粉碎卸载"
@@ -521,8 +592,9 @@ while true; do
         4) install_vmess_ws; read -p "👉 按回车返回大屏..." ;;
         5) install_trojan_reality; read -p "👉 按回车返回大屏..." ;;
         6) apply_acme_cert ;;
-       7) install_all_nodes ;;
-       b|B) enable_bbr ;;
+        7) install_all_nodes ;;
+        b|B) enable_bbr ;;
+        w|W) enable_warp ;;
         8) export_all_nodes; read -p "👉 提取完毕，按回车返回..." ;;
         9) update_vx ;;
         10) uninstall_vne; read -p "👉 按回车退出..."; break ;;
