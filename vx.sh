@@ -46,11 +46,22 @@ function show_dashboard() {
     VM_STAT="${red}[未启]${plain}"; VM_PORT="-----"; VM_SNI="-------"
     TR_STAT="${red}[未启]${plain}"; TR_PORT="-----"; TR_SNI="-------"
 
+    # --- 拓展功能状态探测 ---
     ACME_STAT="${red}未部署 ❌${plain}"
- if [[ -f "$CERT_DIR/acme.crt" ]]; then
-     ACME_DOMAIN=$(cat "$CERT_DIR/acme_domain.txt" 2>/dev/null)
-     ACME_STAT="${green}已部署 ✅${plain} [${purple}${ACME_DOMAIN}${plain}]"
- fi
+    if [[ -f "$CERT_DIR/acme.crt" ]]; then
+        ACME_DOMAIN=$(cat "$CERT_DIR/acme_domain.txt" 2>/dev/null)
+        ACME_STAT="${green}已部署 ✅${plain} [${purple}${ACME_DOMAIN}${plain}]"
+    fi
+
+    WARP_STAT="${red}未开启 ❌${plain}"
+    if [[ -f "$JSON_FILE" ]] && jq -e '.outbounds[] | select(.tag == "warp-socks")' "$JSON_FILE" >/dev/null 2>&1; then
+        WARP_STAT="${green}已激活 ✅${plain} (SOCKS5 分流解锁)"
+    fi
+
+    ARGO_STAT="${red}未开启 ❌${plain}"
+    if systemctl is-active --quiet vx-argo.service 2>/dev/null; then
+        ARGO_STAT="${green}运行中 ✅${plain} (VMess 穿透保活)"
+    fi
     
     if [[ -f "$JSON_FILE" ]]; then
         if jq -e '.inbounds[] | select(.tag == "vless-in")' "$JSON_FILE" >/dev/null 2>&1; then
@@ -102,6 +113,11 @@ function show_dashboard() {
     echo -e "   IPv4地址: ${green}$IPV4${plain}"
     echo -e "   IPv6地址: ${green}$IPV6${plain}"
     echo -e "   归属节点: ${blue}$LOC - $ISP${plain}"
+    echo -e "----------------------------------------------------------------------"
+    echo -e "🧩  ${yellow}高级拓展矩阵:${plain}"
+    echo -e "   ACME 证书: $ACME_STAT"
+    echo -e "   WARP 解锁: $WARP_STAT"
+    echo -e "   Argo 隧道: $ARGO_STAT"
     echo -e "----------------------------------------------------------------------"
     echo -e "🛡️  ${yellow}代理引擎矩阵 (Sing-box 状态: $SB_STAT):${plain}"
     echo -e "   $VL_STAT VLESS-Reality | 端口: ${cyan}$VL_PORT${plain} | 伪装: ${purple}$VL_SNI${plain}"
@@ -227,8 +243,15 @@ function apply_acme_cert() {
     echo -e "${yellow}⚠️ 警告：请确保您的域名已在控制台成功解析到本机器的 IP！${plain}"
     get_smart_ip
     echo -e "当前 VPS IP: ${green}${SERVER_IP}${plain}"
-    read -p "👉 请输入您已解析的真实域名: " REAL_DOMAIN
-    [[ -z "$REAL_DOMAIN" ]] && echo -e "${red}❌ 域名不能为空！${plain}" && sleep 2 && return
+    
+    # 极致防呆：增加可回车取消的提示
+    read -p "👉 请输入您已解析的真实域名 (直接按回车可取消并返回): " REAL_DOMAIN
+    
+    if [[ -z "$REAL_DOMAIN" ]]; then
+        echo -e "\n${yellow}已取消操作，安全返回主界面。${plain}"
+        sleep 1.5
+        return
+    fi
     
     # 依赖检查与安装 socat
     if ! command -v socat &> /dev/null; then
@@ -446,7 +469,7 @@ function install_all_nodes() {
     echo "tuic://${U3}:${PW3}@${SERVER_IP}:${P3}/?sni=${COMMON_SNI}&alpn=h3&congestion_control=bbr&insecure=1#TUIC-VeloX" >> "$LINK_FILE"
     open_port $P3
 
-    echo -e "${yellow}>>> [4/5] 正在极极压入 VMess-WS...${plain}"
+    echo -e "${yellow}>>> [4/5] 正在极速压入 VMess-WS...${plain}"
     local P4=$(shuf -i 10000-60000 -n 1); local U4=$TEMP_UUID; local W4="/vx-$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)"
     jq --argjson p "$P4" --arg u "$U4" --arg w "$W4" '.inbounds += [{"type":"vmess","tag":"vmess-in","listen":"::","listen_port":$p,"users":[{"uuid":$u,"alterId":0}],"transport":{"type":"ws","path":$w}}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
     local VM_J=$(jq -n -c --arg v "2" --arg ps "VMess-WS-VeloX" --arg add "$SERVER_IP" --arg port "$P4" --arg id "$U4" --arg net "ws" --arg host "" --arg path "$W4" --arg tls "" --arg sni "" '{v:$v, ps:$ps, add:$add, port:$port, id:$id, aid:"0", scy:"auto", net:$net, type:"none", host:$host, path:$path, tls:$tls, sni:$sni}')
