@@ -635,8 +635,7 @@ function enable_warp() {
     jq '.outbounds += [{"type":"socks","tag":"warp-socks","server":"127.0.0.1","server_port":40000}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
 
     # 核心分流规则 (已修复不规范的 Spotify URL Bug)
-    jq '.route.rules += [{"domain_suffix":["openai.com","chatgpt.com","ai.com","anthropic.com","claude.ai","gemini.google.com","netflix.com","netflix.net","nflximg.net","nflxvideo.net","nflxext.com","disneyplus.com","dssott.com","googleusercontent.com","spotify.com","hulu.com","hbomax.com","max.com"],"outbound":"warp-socks"}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
-
+    jq '.route.rules += [{"domain_suffix":["openai.com","chatgpt.com","ai.com","anthropic.com","claude.ai","gemini.google.com","youtube.com","youtu.be","googlevideo.com","ytimg.com","netflix.com","netflix.net","nflximg.net","nflxvideo.net","nflxext.com","disneyplus.com","dssott.com","hulu.com","hbomax.com","max.com","tiktok.com","tiktokv.com","byteoversea.com","pixiv.net","piv.app","discord.com","discord.gg","scholar.google.com","sciencedirect.com"],"outbound":"warp-socks"}]' "$JSON_FILE" > /tmp/vx.json && mv /tmp/vx.json "$JSON_FILE"
     # 4. 重启生效
     echo -e "${yellow}>>> [4/4] 正在重启引擎，激活无缝解锁矩阵...${plain}"
     systemctl restart vx-core.service
