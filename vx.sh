@@ -199,8 +199,20 @@ function install_core() {
     if [[ ! -f "$BIN_FILE" ]]; then
         echo -e "${yellow}>>> 正在拉取 Sing-box 内核...${plain}"
         LATEST=$(curl -sL https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box | jq -r '.versions | map(select(test("alpha|beta|rc") | not)) | .[0]')
-        ARCH=$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")
-        wget -qO sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${LATEST}/sing-box-${LATEST}-linux-${ARCH}.tar.gz"
+        # 🚀 [优化] 自动识别架构，支持 amd64 和 arm64 (全平台适配)
+        local CPU_ARCH=$(uname -m)
+        local SB_ARCH="amd64"
+        [[ "$CPU_ARCH" == "aarch64" || "$CPU_ARCH" == "arm64" ]] && SB_ARCH="arm64"
+        
+        echo -e "${yellow}>>> 正在从官方源拉取 Sing-box v${LATEST} (${SB_ARCH})...${plain}"
+        wget -qO sb.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${LATEST}/sing-box-${LATEST}-linux-${SB_ARCH}.tar.gz"
+        
+        # 🚀 [新增质检] 检查文件大小，防止下到空文件或 404 页面
+        if [[ ! -s sb.tar.gz ]]; then
+            echo -e "${red}❌ 致命错误: 内核下载失败！请检查服务器网络或 GitHub 连通性。${plain}"
+            rm -f sb.tar.gz && return 1
+        fi
+
         tar -xzf sb.tar.gz && mv sing-box-*/sing-box $BIN_FILE && chmod +x $BIN_FILE && rm -rf sb.tar.gz sing-box*
     fi
     cat << EOF > $SERVICE_FILE
