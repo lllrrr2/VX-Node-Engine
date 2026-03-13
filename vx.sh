@@ -442,8 +442,8 @@ function install_trojan_reality() {
     cat << EOF > /tmp/vx_tmp.json
 {"type":"trojan","tag":"trojan-in","listen":"::","listen_port":$LISTEN_PORT,"users":[{"password":"$TROJAN_PASS"}],"tls":{"enabled":true,"server_name":"$SNI_DOMAIN","reality":{"enabled":true,"handshake":{"server":"$SNI_DOMAIN","server_port":443},"private_key":"$PRV_KEY","short_id":["$SHORT_ID"]}}}
 EOF
-    jq 'del(.inbounds[] | select(.tag == "trojan-in"))' "$JSON_FILE" > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
-    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
+    jq 'del(.inbounds[] | select(.tag == "trojan-in"))' "$JSON_FILE" | atomic_jq
+    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json | atomic_jq
 
     open_port $LISTEN_PORT
     systemctl restart vx-core.service
