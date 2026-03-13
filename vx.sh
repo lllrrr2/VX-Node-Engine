@@ -621,14 +621,36 @@ function enable_warp() {
 }
 
 # ==================================================
-# ☁️ 终极保命: Cloudflare Argo 隧道挂载 (开源防呆版)
+# ☁️ 终极保命: Cloudflare Argo 隧道挂载 (开源智能版)
 # ==================================================
 function enable_argo() {
     clear
     echo -e "${cyan}======================================================================${plain}"
-    echo -e "           ☁️ 部署 Cloudflare Argo 隧道 (VMess-WS 复活甲)"
+    echo -e "             ☁️ Argo 隧道 (VMess-WS 复活甲) 智能控制中枢"
     echo -e "${cyan}======================================================================${plain}"
 
+    # 🚀 [新增逻辑] 智能状态感知：检测 Argo 是否已在运行
+    if systemctl is-active --quiet vx-argo.service 2>/dev/null || [[ -f /etc/systemd/system/vx-argo.service ]]; then
+        echo -e "${green}>>> 系统检测：当前 Argo 隧道复活甲已处于【部署/运行】状态！${plain}"
+        read -p "❓ 是否要一键关闭并彻底拆除 Argo 隧道？(y/n) [默认 n]: " close_choice
+        if [[ "$close_choice" == [Yy] ]]; then
+            echo -e "${yellow}>>> 正在拆除 Argo 隧道并清理系统守护进程...${plain}"
+            systemctl stop vx-argo >/dev/null 2>&1
+            systemctl disable vx-argo >/dev/null 2>&1
+            rm -f /etc/systemd/system/vx-argo.service
+            systemctl daemon-reload
+            
+            # 智能清理遗留的节点链接
+            sed -i '/VMess-Argo-复活甲/d' "$LINK_FILE" 2>/dev/null
+            echo -e "${green}✅ Argo 隧道已彻底拆除，复活甲节点已从本地销毁！${plain}"
+        else
+            echo -e "${green}>>> 操作已取消，Argo 隧道继续为您保驾护航。${plain}"
+        fi
+        read -p "👉 按回车返回大屏..."
+        return
+    fi
+
+    # 🚀 下方为全新部署流程
     # 1. 提取底层 VMess 核心参数
     local VMESS_PORT=$(jq -r '.inbounds[] | select(.tag == "vmess-in") | .listen_port' "$JSON_FILE" 2>/dev/null)
     local VMESS_PATH=$(jq -r '.inbounds[] | select(.tag == "vmess-in") | .transport.path' "$JSON_FILE" 2>/dev/null)
@@ -737,9 +759,26 @@ EOF
         fi
     fi
 
-    # 5. 生成终极节点链接
+    # 5. 生成终极节点链接 (👑 小白救星：强注优选 IP 黑科技)
     echo -e "${yellow}>>> [4/4] 正在锻造 Argo 终极复活节点...${plain}"
-    local VM_J=$(jq -n -c --arg v "2" --arg ps "VMess-Argo-复活甲🛡️" --arg add "$ARGO_DOMAIN" --arg port "443" --arg id "$VMESS_UUID" --arg net "ws" --arg host "$ARGO_DOMAIN" --arg path "$VMESS_PATH" --arg tls "tls" --arg sni "$ARGO_DOMAIN" '{v:$v, ps:$ps, add:$add, port:$port, id:$id, aid:"0", scy:"auto", net:$net, type:"none", host:$host, path:$path, tls:$tls, sni:$sni}')
+    
+    # 【核心黑科技】强行将客户端地址替换为全网高通透 IP，无视国内 DNS 污染！
+    local ARGO_MAGIC_ADDRESS="www.visa.com"
+    
+    # 采用安全 jq 构建 JSON，确保字段不乱码
+    local VM_J=$(jq -n -c \
+        --arg v "2" \
+        --arg ps "VMess-Argo-复活甲🛡️" \
+        --arg add "$ARGO_MAGIC_ADDRESS" \
+        --arg port "443" \
+        --arg id "$VMESS_UUID" \
+        --arg net "ws" \
+        --arg host "$ARGO_DOMAIN" \
+        --arg path "$VMESS_PATH" \
+        --arg tls "tls" \
+        --arg sni "$ARGO_DOMAIN" \
+        '{v:$v, ps:$ps, add:$add, port:$port, id:$id, aid:"0", scy:"auto", net:$net, type:"none", host:$host, path:$path, tls:$tls, sni:$sni}')
+        
     local ARGO_LINK="vmess://$(echo -n "$VM_J" | base64 -w 0)"
 
     # 无缝覆盖旧链接
@@ -753,6 +792,8 @@ EOF
         echo -e "${purple}⏱️ 当前模式: 临时穿透 (trycloudflare)${plain}"
     fi
     echo -e "${cyan}🌐 专属防御域名: ${plain}${green}${ARGO_DOMAIN}${plain}"
+    echo -e "${yellow}💡 极客提示: 节点已内置高通透免流 IP (www.visa.com) 以确保小白即连即用。${plain}"
+    echo -e "${yellow}   懂行的玩家可自行在客户端内将【地址】修改为更适合本地网络的 CF 优选 IP！${plain}"
     read -p "👉 按回车返回大屏，按【8】即可提取这个复活甲节点..."
 }
 
