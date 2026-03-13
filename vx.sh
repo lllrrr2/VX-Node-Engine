@@ -6,8 +6,19 @@
 
 
 export LANG=en_US.UTF-8
-set -o pipefail 
-# set -e        
+set -euo pipefail
+# === 🛡️ 零依赖原子 JSON 写入引擎 (10/10 满分防写死) ===
+atomic_jq() {
+    local tmp="${JSON_FILE}.tmp"
+    cat > "$tmp"
+    if jq . "$tmp" >/dev/null 2>&1; then
+        mv -f "$tmp" "$JSON_FILE"
+    else
+        echo -e "${red}❌ 致命错误: JSON 格式非法，已自动回滚！${plain}"
+        rm -f "$tmp" && return 1
+    fi
+}
+
 red='\033[0;31m'; green='\033[0;32m'; yellow='\033[0;33m'; cyan='\033[0;36m'; blue='\033[0;34m'; purple='\033[0;35m'; plain='\033[0m'
 
 CONF_DIR="/etc/velox_vne"
@@ -17,7 +28,7 @@ JSON_FILE="$CONF_DIR/config.json"
 LINK_FILE="$CONF_DIR/links.txt"
 SERVICE_FILE="/etc/systemd/system/vx-core.service"
 SCRIPT_URL="https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh"
-VX_VERSION="4.3.0"
+VX_VERSION="4.3.1"
 TEMP_UUID=$(cat /proc/sys/kernel/random/uuid)
 TEMP_PASS=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 16)
 
@@ -191,8 +202,7 @@ function open_port() {
 
 function init_json() {
     if [[ ! -f "$JSON_FILE" ]]; then
-        echo '{"log":{"level":"info","timestamp":true},"inbounds":[],"outbounds":[{"type":"direct","tag":"direct"},{"type":"block","tag":"block"}]}' | jq . > "$JSON_FILE"
-    fi
+         echo '{"log":{"level":"info","timestamp":true},"inbounds":[],"outbounds":[{"type":"direct","tag":"direct"},{"type":"block","tag":"block"}]}' | jq . | atomic_jq    fi
 }
 
 function install_core() {
