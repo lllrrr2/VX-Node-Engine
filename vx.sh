@@ -104,7 +104,7 @@ fi
     fi
 
     # 极速无感检测版本更新 (1.5秒超时)
-    REMOTE_VER=$(curl -s -m 1.5 "https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh" | grep -m 1 "^VX_VERSION=" | cut -d'"' -f2)
+  REMOTE_VER=$(curl -s -m 1.5 "$SCRIPT_URL" | grep "^VX_VERSION=" | head -n 1 | cut -d'"' -f2 || true)
     UPDATE_MSG=""
     if [[ -n "$REMOTE_VER" && "$REMOTE_VER" != "$VX_VERSION" ]]; then
         UPDATE_MSG="${yellow}🔔 发现新版 v${REMOTE_VER} (请按 9 升级)${plain}"
