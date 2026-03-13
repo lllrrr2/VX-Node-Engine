@@ -202,7 +202,8 @@ function open_port() {
 
 function init_json() {
     if [[ ! -f "$JSON_FILE" ]]; then
-         echo '{"log":{"level":"info","timestamp":true},"inbounds":[],"outbounds":[{"type":"direct","tag":"direct"},{"type":"block","tag":"block"}]}' | jq . | atomic_jq    fi
+         echo '{"log":{"level":"info","timestamp":true},"inbounds":[],"outbounds":[{"type":"direct","tag":"direct"},{"type":"block","tag":"block"}]}' | jq . | atomic_jq
+    fi
 }
 
 function install_core() {
@@ -344,8 +345,8 @@ function install_vless_reality() {
     cat << EOF > /tmp/vx_tmp.json
 {"type":"vless","tag":"vless-in","listen":"::","listen_port":$LISTEN_PORT,"users":[{"uuid":"$UUID","flow":"xtls-rprx-vision"}],"tls":{"enabled":true,"server_name":"$SNI_DOMAIN","reality":{"enabled":true,"handshake":{"server":"$SNI_DOMAIN","server_port":443},"private_key":"$PRV_KEY","short_id":["$SHORT_ID"]}}}
 EOF
-    jq 'del(.inbounds[] | select(.tag == "vless-in"))' "$JSON_FILE" > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
-    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
+    jq 'del(.inbounds[] | select(.tag == "vless-in"))' "$JSON_FILE" | atomic_jq
+    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json | atomic_jq
 
     open_port $LISTEN_PORT
     systemctl restart vx-core.service
@@ -366,8 +367,8 @@ function install_hysteria2() {
     cat << EOF > /tmp/vx_tmp.json
 {"type":"hysteria2","tag":"hy2-in","listen":"::","listen_port":$LISTEN_PORT,"users":[{"password":"$HYS_PASS"}],"tls":{"enabled":true,"alpn":["h3"],"certificate_path":"$CERT_DIR/cert.crt","key_path":"$CERT_DIR/private.key"}}
 EOF
-    jq 'del(.inbounds[] | select(.tag == "hy2-in"))' "$JSON_FILE" > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
-    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
+    jq 'del(.inbounds[] | select(.tag == "hy2-in"))' "$JSON_FILE" | atomic_jq
+    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json | atomic_jq
 
     open_port $LISTEN_PORT
     systemctl restart vx-core.service
@@ -389,8 +390,8 @@ function install_tuic_v5() {
     cat << EOF > /tmp/vx_tmp.json
 {"type":"tuic","tag":"tuic-in","listen":"::","listen_port":$LISTEN_PORT,"users":[{"uuid":"$UUID","password":"$TUIC_PASS"}],"congestion_control":"bbr","tls":{"enabled":true,"alpn":["h3"],"certificate_path":"$CERT_DIR/cert.crt","key_path":"$CERT_DIR/private.key"}}
 EOF
-    jq 'del(.inbounds[] | select(.tag == "tuic-in"))' "$JSON_FILE" > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
-    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
+    jq 'del(.inbounds[] | select(.tag == "tuic-in"))' "$JSON_FILE" | atomic_jq
+    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json | atomic_jq
 
     open_port $LISTEN_PORT
     systemctl restart vx-core.service
@@ -412,8 +413,8 @@ function install_vmess_ws() {
     cat << EOF > /tmp/vx_tmp.json
 {"type":"vmess","tag":"vmess-in","listen":"::","listen_port":$LISTEN_PORT,"users":[{"uuid":"$UUID","alterId":0}],"transport":{"type":"ws","path":"$WS_PATH"}}
 EOF
-    jq 'del(.inbounds[] | select(.tag == "vmess-in"))' "$JSON_FILE" > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
-    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json > /tmp/vx_clean.json && mv /tmp/vx_clean.json "$JSON_FILE"
+    jq 'del(.inbounds[] | select(.tag == "vmess-in"))' "$JSON_FILE" | atomic_jq
+    jq '.inbounds += [input]' "$JSON_FILE" /tmp/vx_tmp.json | atomic_jq
 
     open_port $LISTEN_PORT
     systemctl restart vx-core.service
