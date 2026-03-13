@@ -29,8 +29,8 @@ LINK_FILE="$CONF_DIR/links.txt"
 SERVICE_FILE="/etc/systemd/system/vx-core.service"
 SCRIPT_URL="https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh"
 VX_VERSION="4.3.1"
-TEMP_UUID=$(cat /proc/sys/kernel/random/uuid)
-TEMP_PASS=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 16)
+TEMP_UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "vx-$(date +%s)")
+TEMP_PASS=$(openssl rand -hex 8)
 
 [[ $EUID -ne 0 ]] && echo -e "${red}❌ 致命错误: 请使用 root 用户运行此引擎！${plain}" && exit 1
 
