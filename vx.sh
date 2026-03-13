@@ -35,7 +35,8 @@ TEMP_PASS=$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 16)
 [[ $EUID -ne 0 ]] && echo -e "${red}❌ 致命错误: 请使用 root 用户运行此引擎！${plain}" && exit 1
 
 if [[ ! -f "/usr/local/bin/vx" ]]; then
-    curl -sL "$SCRIPT_URL" -o /usr/local/bin/vx >/dev/null 2>&1
+    curl -sL "$SCRIPT_URL" -o /usr/local/bin/vx.new >/dev/null 2>&1
+    mv /usr/local/bin/vx.new /usr/local/bin/vx
     chmod +x /usr/local/bin/vx
 fi
 
