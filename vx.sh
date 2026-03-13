@@ -230,8 +230,8 @@ function generate_cert_dynamic() {
         local ACME_DOMAIN=$(cat "$CERT_DIR/acme_domain.txt")
         if [[ "$DOMAIN" == "$ACME_DOMAIN" ]]; then
             echo -e "${green}>>> 智能识别到匹配的 ACME 真实证书 [${DOMAIN}]，正在挂载...${plain}"
-            cp -f $CERT_DIR/acme.crt $CERT_DIR/cert.crt
-            cp -f $CERT_DIR/acme.key $CERT_DIR/private.key
+            ln -sf $CERT_DIR/acme.crt $CERT_DIR/cert.crt
+            ln -sf $CERT_DIR/acme.key $CERT_DIR/private.key
             return
         fi
     fi
