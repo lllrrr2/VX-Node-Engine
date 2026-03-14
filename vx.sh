@@ -1128,7 +1128,7 @@ while true; do
     echo -e "  ${cyan}t.${plain} 📺 流媒体/AI解锁测试      ${cyan}0.${plain}
     echo -e "  ${cyan}h.${plain} 📖 面板说明与避坑指南    ${cyan}0.${plain} 🔙 退出终端"
     echo -e "${cyan}======================================================================${plain}"
-    read -p "👉 执行指令 [0-10, h/b/w/a]: " choice
+    read -p "👉 执行指令 [0-10, b/w/a/t/h]: " choice
     case "$choice" in
         1) install_vless_reality; read -p "👉 按回车返回大屏..." ;;
         2) install_hysteria2; read -p "👉 按回车返回大屏..." ;;
