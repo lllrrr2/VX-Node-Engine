@@ -689,9 +689,22 @@ function enable_argo() {
             rm -f /etc/systemd/system/vx-argo.service
             systemctl daemon-reload
             
-            # 智能清理遗留的节点链接
-            sed -i '/VMess-Argo-复活甲/d' "$LINK_FILE" 2>/dev/null
-            echo -e "${green}✅ Argo 隧道已彻底拆除，复活甲节点已从本地销毁！${plain}"
+            # 智能清理遗留的节点链接 (修复Base64无法匹配的Bug)
+        if [[ -f "$LINK_FILE" ]]; then
+            mv "$LINK_FILE" "${LINK_FILE}.tmp"
+            cat "${LINK_FILE}.tmp" | while read line; do
+                if [[ "$line" == vmess://* ]]; then
+                    # 强行把密码箱撬开看一眼，如果有 trycloudflare 或者 Argo 就扔掉，没有就保留
+                    if ! echo "$line" | sed 's/vmess:\/\///' | base64 -d 2>/dev/null | grep -qiE "trycloudflare|Argo"; then
+                        echo "$line" >> "$LINK_FILE"
+                    fi
+                else
+                    echo "$line" >> "$LINK_FILE"
+                fi
+            done
+            rm -f "${LINK_FILE}.tmp"
+        fi
+        echo -e "${green}✅ Argo 隧道已彻底拆除，复活甲节点已从本地销毁！${plain}"
         else
             echo -e "${green}>>> 操作已取消，Argo 隧道继续为您保驾护航。${plain}"
         fi
