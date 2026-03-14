@@ -82,6 +82,17 @@ bash <(wget -qO- https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine
 
 ---
 
+### 🚑 紧急救援与强制同步 (急救包)
+
+如果你在修改源码、更新面板时遇到语法错误，导致 `vx` 命令彻底瘫痪（面板无法弹出）；或者你想**秒级强制拉取** GitHub 上的最新代码（穿透 CDN 缓存），请在 VPS 终端直接执行以下终极抢救指令：
+
+```bash
+curl -sL "[https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh?v=$(date](https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh?v=$(date) +%s)" -o /usr/local/bin/vx && chmod +x /usr/local/bin/vx
+```
+💡 提示：执行完毕后不会有任何提示。此时重新输入 vx 回车，你的大屏面板即可满血复活！
+
+---
+
 ⚠️ NAT 服务器用户特别提示：
 如果您使用的是端口受限的 NAT 服务器，请不要使用 [7] 一键大满贯 功能（因为其采用全随机端口）。请使用菜单 [1] - [5] 独立安装，并在提示时手动输入您被分配的可用端口。或者直接使用 [a] Argo 隧道 进行无视端口的内网穿透！
 
