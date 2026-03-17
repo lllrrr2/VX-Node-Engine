@@ -68,13 +68,23 @@ function show_dashboard() {
         ACME_STAT="${green}已部署 ✅${plain} [${purple}${ACME_DOMAIN}${plain}]"
     fi
     
+   # === 👇 新增：超轻量订阅引擎探测 👇 ===
     SUB_STAT="${red}未生成 ❌${plain}"
     if systemctl is-active --quiet vx-sub.service 2>/dev/null; then
         local S_PORT=$(cat "$CONF_DIR/sub_port.txt" 2>/dev/null)
         local S_PATH=$(cat "$CONF_DIR/sub_path.txt" 2>/dev/null)
         get_smart_ip
-        SUB_STAT="${green}运行中 ✅${plain}\n   🔗 专属订阅: ${yellow}http://${SERVER_IP}:${S_PORT}/${S_PATH}/vx_sub${plain}"
+        
+        # 智能探测：如果开启了 HTTPS 装甲并且有域名
+        if systemctl is-active --quiet vx-sub-https.service 2>/dev/null && [[ -f "$CERT_DIR/acme_domain.txt" ]]; then
+            local S_HTTPS_PORT=$(cat "$CONF_DIR/sub_port_https.txt" 2>/dev/null)
+            local S_DOMAIN=$(cat "$CERT_DIR/acme_domain.txt")
+            SUB_STAT="${green}运行中 ✅${plain}\n   🔗 专属订阅: ${yellow}https://${S_DOMAIN}:${S_HTTPS_PORT}/${S_PATH}/vx_sub${plain}"
+        else
+            SUB_STAT="${green}运行中 ✅${plain}\n   🔗 专属订阅: ${yellow}http://${SERVER_IP}:${S_PORT}/${S_PATH}/vx_sub${plain}"
+        fi
     fi
+    # === 👆 新增结束 👆 ===
 
  WARP_STAT="${red}未开启 ❌${plain}"
 if [[ -f "$JSON_FILE" ]] && jq -e '.outbounds[] | select(.tag == "warp-socks")' "$JSON_FILE" >/dev/null 2>&1; then
@@ -266,7 +276,7 @@ function get_smart_ip() {
 
 
 # ==================================================
-# 📡 动态订阅防盗分发引擎 (极致兼容 & 智能容错版)
+# 📡 动态订阅防盗分发引擎 (极致兼容 & 自动 HTTPS 版)
 # ==================================================
 function update_sub() {
     local WEB_DIR="$CONF_DIR/www"
@@ -275,12 +285,10 @@ function update_sub() {
 
     mkdir -p "$WEB_DIR"
 
-    # 🌟 智能升级 1：端口防冲突探测 (绝对不抢占已有端口)
     if [[ ! -f "$SUB_PORT_FILE" ]]; then
         local TEMP_PORT
         while true; do
             TEMP_PORT=$(shuf -i 30000-40000 -n 1)
-            # 探测端口是否被占用，空闲才跳出循环
             if ! ss -tunlp | grep -q ":$TEMP_PORT " 2>/dev/null; then
                 echo "$TEMP_PORT" > "$SUB_PORT_FILE"
                 break
@@ -288,7 +296,6 @@ function update_sub() {
         done
     fi
 
-    # 🌟 智能升级 2：UUID 兜底容错机制 (完美修复防盗路径)
     if [[ ! -s "$SUB_PATH_FILE" ]]; then
         local NEW_UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null)
         if [[ -z "$NEW_UUID" ]]; then
@@ -302,34 +309,24 @@ function update_sub() {
     local TARGET_DIR="$WEB_DIR/$SUB_PATH"
     mkdir -p "$TARGET_DIR"
 
-    # 🌟 智能升级 3：跨平台 Base64 兼容处理
     if [[ -s "$LINK_FILE" ]]; then
-        # 放弃使用 -w 0，改用通用的 tr 删除所有换行符，兼容所有 Linux 发行版
         cat "$LINK_FILE" | base64 | tr -d '\n\r' > "$TARGET_DIR/vx_sub"
     else
         echo "" > "$TARGET_DIR/vx_sub"
     fi
 
-    # 🌟 智能升级 4：动态获取 Busybox 绝对路径 (解决 systemd 报错死穴)
+    # --- 1. 启动基础 HTTP 服务 ---
     if ! systemctl is-active --quiet vx-sub.service 2>/dev/null; then
         local BB_PATH=$(command -v busybox)
-        if [[ -z "$BB_PATH" ]]; then
-            # 如果极端情况下没装上 busybox，抛出错误但不让脚本崩溃
-            echo -e "\n${red}❌ 警告: 未找到 busybox 组件，订阅引擎启动失败！${plain}"
-            return
-        fi
-
-        # 动态写入真实路径
         cat <<EOF > /etc/systemd/system/vx-sub.service
 [Unit]
-Description=Velox Subscription Server (Smart Engine)
+Description=Velox Subscription Server (HTTP)
 After=network.target
 
 [Service]
 Type=simple
 ExecStart=$BB_PATH httpd -f -p $SUB_PORT -h $WEB_DIR
 Restart=always
-RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
@@ -338,7 +335,39 @@ EOF
         systemctl enable --now vx-sub.service >/dev/null 2>&1
         open_port $SUB_PORT
     fi
+
+    # --- 2. 启动 HTTPS 加密装甲 (智能识别 ACME 证书) ---
+    if [[ -f "$CERT_DIR/acme.crt" && -f "$CERT_DIR/acme.key" ]]; then
+        local HTTPS_PORT=$((SUB_PORT + 1)) # 使用相邻的端口做 HTTPS
+        echo "$HTTPS_PORT" > "$CONF_DIR/sub_port_https.txt"
+        
+        # 合并证书供 socat 使用
+        cat "$CERT_DIR/acme.crt" "$CERT_DIR/acme.key" > "$CERT_DIR/socat.pem"
+        
+        if ! systemctl is-active --quiet vx-sub-https.service 2>/dev/null; then
+            local SOCAT_PATH=$(command -v socat)
+            cat <<EOF > /etc/systemd/system/vx-sub-https.service
+[Unit]
+Description=Velox Subscription Server (HTTPS Wrapper)
+After=vx-sub.service
+
+[Service]
+Type=simple
+# 核心魔法：将 HTTPS 流量解密后转发给本地的 Busybox
+ExecStart=$SOCAT_PATH openssl-listen:$HTTPS_PORT,cert=$CERT_DIR/socat.pem,verify=0,fork tcp:127.0.0.1:$SUB_PORT
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+            systemctl daemon-reload
+            systemctl enable --now vx-sub-https.service >/dev/null 2>&1
+            open_port $HTTPS_PORT
+        fi
+    fi
 }
+
+
 
 # --- 智能双引擎发证机 (真实ACME/极速自签 无缝切换) ---
 function generate_cert_dynamic() {
