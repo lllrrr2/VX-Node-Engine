@@ -288,10 +288,13 @@ function update_sub() {
         done
     fi
 
-    # 🌟 智能升级 2：UUID 兜底容错机制
-    if [[ ! -f "$SUB_PATH_FILE" ]]; then
-        # 如果有些精简版系统没有 /proc/sys 接口，自动降级为时间戳+随机数
-        cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "vx-$(date +%s)-$(shuf -i 100-999 -n 1)" > "$SUB_PATH_FILE"
+    # 🌟 智能升级 2：UUID 兜底容错机制 (完美修复防盗路径)
+    if [[ ! -s "$SUB_PATH_FILE" ]]; then
+        local NEW_UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null)
+        if [[ -z "$NEW_UUID" ]]; then
+            NEW_UUID="vx-$(date +%s)-$(shuf -i 100-999 -n 1)"
+        fi
+        echo "$NEW_UUID" > "$SUB_PATH_FILE"
     fi
 
     local SUB_PORT=$(cat "$SUB_PORT_FILE")
