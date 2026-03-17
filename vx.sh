@@ -19,7 +19,7 @@ atomic_jq() {
     fi
 }
 
-red='\033[0;31m'; green='\033[0;32m'; yellow='\033[0;33m'; cyan='\033[0;36m'; blue='\033[0;36m'; purple='\033[0;35m'; plain='\033[0m'
+red='\033[0;31m'; green='\033[0;32m'; yellow='\033[0;33m'; cyan='\033[0;36m'; blue='\033[0;34m'; purple='\033[0;35m'; plain='\033[0m'
 
 CONF_DIR="/etc/velox_vne"
 CERT_DIR="$CONF_DIR/cert"
@@ -29,15 +29,19 @@ LINK_FILE="$CONF_DIR/links.txt"
 SERVICE_FILE="/etc/systemd/system/vx-core.service"
 SCRIPT_URL="https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh"
 VX_VERSION="4.3.1"
-TEMP_UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "vx-$(date +%s)")
-TEMP_PASS=$(openssl rand -hex 8)
+
 
 [[ $EUID -ne 0 ]] && echo -e "${red}❌ 致命错误: 请使用 root 用户运行此引擎！${plain}" && exit 1
 
 if [[ ! -f "/usr/local/bin/vx" ]]; then
     curl -sL "$SCRIPT_URL" -o /usr/local/bin/vx.new >/dev/null 2>&1
-    mv /usr/local/bin/vx.new /usr/local/bin/vx
-    chmod +x /usr/local/bin/vx
+    # 增加原子级拦截：文件必须大于 0 字节才覆盖，防止断网自毁
+    if [[ -s "/usr/local/bin/vx.new" ]]; then
+        mv -f /usr/local/bin/vx.new /usr/local/bin/vx
+        chmod +x /usr/local/bin/vx
+    else
+        rm -f /usr/local/bin/vx.new
+    fi
 fi
 
 # ==================================================
@@ -207,10 +211,11 @@ function open_port() {
         firewall-cmd --zone=public --add-port=$PORT/udp --permanent >/dev/null 2>&1
         firewall-cmd --reload >/dev/null 2>&1
     fi
-    # 3. 兜底方案：原生 iptables (跨平台通用)
+   # 3. 兜底方案：原生 iptables (跨平台通用)
     if command -v iptables &> /dev/null; then
-        iptables -I INPUT -p tcp --dport $PORT -j ACCEPT >/dev/null 2>&1
-        iptables -I INPUT -p udp --dport $PORT -j ACCEPT >/dev/null 2>&1
+        # 智能侦测拦截：无规则才插入，拒绝垃圾堆叠
+        iptables -C INPUT -p tcp --dport $PORT -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport $PORT -j ACCEPT >/dev/null 2>&1
+        iptables -C INPUT -p udp --dport $PORT -j ACCEPT 2>/dev/null || iptables -I INPUT -p udp --dport $PORT -j ACCEPT >/dev/null 2>&1
         # 尝试保存，如果未安装保存插件也不报错，至少保证当次开机可用
         if command -v netfilter-persistent &> /dev/null; then
             netfilter-persistent save >/dev/null 2>&1
@@ -680,6 +685,9 @@ function enable_bbr() {
     fi
 
     echo -e "${yellow}>>> 正在向系统内核注入 BBR 狂暴参数...${plain}"
+   
+    # 强制唤醒内核模块，兼容更多阉割版系统
+    modprobe tcp_bbr >/dev/null 2>&1 || true
     # 清理可能存在的旧配置
     sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
     sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
@@ -1231,6 +1239,10 @@ function test_media_unlock() {
 
 # --- 主循环入口 ---
 while true; do
+    # 每次刷新菜单，重新配发独立防弹凭证，确保协议间物理隔离
+    TEMP_UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "vx-$(date +%s)")
+    TEMP_PASS=$(openssl rand -hex 8)
+    
     show_dashboard
     echo -e "  ${cyan}1.${plain} ➕ 新增/覆写 VLESS-Reality"
     echo -e "  ${cyan}2.${plain} ➕ 新增/覆写 Hysteria2  (支持自定域名)"
