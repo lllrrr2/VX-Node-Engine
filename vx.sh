@@ -266,45 +266,65 @@ function get_smart_ip() {
 
 
 # ==================================================
-# 📡 动态订阅防盗分发引擎 (Busybox 极低内存版)
+# 📡 动态订阅防盗分发引擎 (极致兼容 & 智能容错版)
 # ==================================================
 function update_sub() {
     local WEB_DIR="$CONF_DIR/www"
     local SUB_PORT_FILE="$CONF_DIR/sub_port.txt"
     local SUB_PATH_FILE="$CONF_DIR/sub_path.txt"
 
-    # 1. 初始化防盗路径与随机端口 (仅首次生成)
+    mkdir -p "$WEB_DIR"
+
+    # 🌟 智能升级 1：端口防冲突探测 (绝对不抢占已有端口)
     if [[ ! -f "$SUB_PORT_FILE" ]]; then
-        echo $(shuf -i 30000-40000 -n 1) > "$SUB_PORT_FILE"
+        local TEMP_PORT
+        while true; do
+            TEMP_PORT=$(shuf -i 30000-40000 -n 1)
+            # 探测端口是否被占用，空闲才跳出循环
+            if ! ss -tunlp | grep -q ":$TEMP_PORT " 2>/dev/null; then
+                echo "$TEMP_PORT" > "$SUB_PORT_FILE"
+                break
+            fi
+        done
     fi
+
+    # 🌟 智能升级 2：UUID 兜底容错机制
     if [[ ! -f "$SUB_PATH_FILE" ]]; then
-        # 生成类似 UUID 的长字符串作为防扫密码锁
-        cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "vx-$(date +%s)" > "$SUB_PATH_FILE"
+        # 如果有些精简版系统没有 /proc/sys 接口，自动降级为时间戳+随机数
+        cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "vx-$(date +%s)-$(shuf -i 100-999 -n 1)" > "$SUB_PATH_FILE"
     fi
 
     local SUB_PORT=$(cat "$SUB_PORT_FILE")
     local SUB_PATH=$(cat "$SUB_PATH_FILE")
     local TARGET_DIR="$WEB_DIR/$SUB_PATH"
-
     mkdir -p "$TARGET_DIR"
 
-    # 2. 实时聚合 Base64 订阅文件
+    # 🌟 智能升级 3：跨平台 Base64 兼容处理
     if [[ -s "$LINK_FILE" ]]; then
-        cat "$LINK_FILE" | base64 -w 0 > "$TARGET_DIR/vx_sub"
+        # 放弃使用 -w 0，改用通用的 tr 删除所有换行符，兼容所有 Linux 发行版
+        cat "$LINK_FILE" | base64 | tr -d '\n\r' > "$TARGET_DIR/vx_sub"
     else
         echo "" > "$TARGET_DIR/vx_sub"
     fi
 
-    # 3. Systemd 工业级守护 Busybox
+    # 🌟 智能升级 4：动态获取 Busybox 绝对路径 (解决 systemd 报错死穴)
     if ! systemctl is-active --quiet vx-sub.service 2>/dev/null; then
+        local BB_PATH=$(command -v busybox)
+        if [[ -z "$BB_PATH" ]]; then
+            # 如果极端情况下没装上 busybox，抛出错误但不让脚本崩溃
+            echo -e "\n${red}❌ 警告: 未找到 busybox 组件，订阅引擎启动失败！${plain}"
+            return
+        fi
+
+        # 动态写入真实路径
         cat <<EOF > /etc/systemd/system/vx-sub.service
 [Unit]
-Description=Velox Subscription Server (Busybox)
+Description=Velox Subscription Server (Smart Engine)
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/busybox httpd -f -p $SUB_PORT -h $WEB_DIR
+ExecStart=$BB_PATH httpd -f -p $SUB_PORT -h $WEB_DIR
 Restart=always
 RestartSec=3
 
