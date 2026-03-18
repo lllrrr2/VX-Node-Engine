@@ -19,8 +19,7 @@ atomic_jq() {
     fi
 }
 
-red='\033[0;31m'; green='\033[0;32m'; yellow='\033[0;33m'; cyan='\033[0;36m'; blue='\033[0;34m'; purple='\033[0;35m'; plain='\033[0m'
-
+red='\033[0;31m'; green='\033[0;32m'; yellow='\033[0;33m'; cyan='\033[0;36m'; blue='\033[0;94m'; purple='\033[0;35m'; plain='\033[0m'
 CONF_DIR="/etc/velox_vne"
 CERT_DIR="$CONF_DIR/cert"
 BIN_FILE="/usr/local/bin/sing-box"
@@ -439,8 +438,8 @@ function apply_acme_cert() {
     echo -e "${yellow}>>> 正在安装证书到 VX 引擎核心目录...${plain}"
     mkdir -p $CERT_DIR
     # 注入无感重载命令，证书续签自动重启 Sing-box (极致防呆)
-   ~/.acme.sh/acme.sh --installcert -d ${REAL_DOMAIN} --fullchainpath $CERT_DIR/acme.crt --keypath $CERT_DIR/acme.key --ecc --force --reloadcmd "systemctl restart vx-core.service vx-sub-https.service" >/dev/null 2>&1    echo "${REAL_DOMAIN}" > $CERT_DIR/acme_domain.txt
-    
+~/.acme.sh/acme.sh --installcert -d ${REAL_DOMAIN} --fullchainpath $CERT_DIR/acme.crt --keypath $CERT_DIR/acme.key --ecc --force --reloadcmd "systemctl restart vx-core.service vx-sub-https.service vx-sub.service" >/dev/null 2>&1
+    echo "${REAL_DOMAIN}" > $CERT_DIR/acme_domain.txt    
     echo -e "\n${green}✅ ACME 真实证书部署完成！系统将自动为您管理后续的十年续签。${plain}"
     echo -e "👉 ${yellow}提示: 安装 Hys2/TUIC/Trojan 时填入此域名，将自动接管真实证书！${plain}"
     read -p "👉 按回车返回大屏..."
