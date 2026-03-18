@@ -1245,11 +1245,11 @@ while true; do
     TEMP_PASS=$(openssl rand -hex 8)
     
     show_dashboard
-    echo -e "  ${cyan}1.${plain} ➕ 新增/覆写 VLESS-Reality"
-    echo -e "  ${cyan}2.${plain} ➕ 新增/覆写 Hysteria2  (支持自定域名)"
-    echo -e "  ${cyan}3.${plain} ➕ 新增/覆写 TUIC v5    (支持自定域名)"
-    echo -e "  ${cyan}4.${plain} ➕ 新增/覆写 VMess-WS   ${yellow}[NEW✨]${plain}"
-    echo -e "  ${cyan}5.${plain} ➕ 新增/覆写 Trojan-Reality ${yellow}[神级✨]${plain}"
+    echo -e "  ${cyan}1.${plain} ➕ 新增/覆写 VLESS-Reality         ${green}[最稳主力✨]${plain}"
+    echo -e "  ${cyan}2.${plain} ➕ 新增/覆写 Hysteria2  (支持自定域名) ${yellow}[暴力加速🚀]${plain}"
+    echo -e "  ${cyan}3.${plain} ➕ 新增/覆写 TUIC v5    (支持自定域名) ${blue}[极致抗丢包💎]${plain}"
+    echo -e "  ${cyan}4.${plain} ➕ 新增/覆写 VMess-WS             ${red}[Argo基座/CDN专属]${plain}"
+    echo -e "  ${cyan}5.${plain} ➕ 新增/覆写 Trojan-Reality        ${purple}[神级隐身✨]${plain}"
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${cyan}6.${plain} 🌍 附加挂载: Acme 真实证书极速申请"
     echo -e "  ${cyan}7.${plain} 🚀 终极大招: 一键满血装载所有协议"
