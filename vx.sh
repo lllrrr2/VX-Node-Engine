@@ -267,8 +267,8 @@ EOF
 
 # --- IPv6/IPv4 智能路由抓取 ---
 function get_smart_ip() {
-    IPV4_TMP=$(curl -s4m3 icanhazip.com)
-    IPV6_TMP=$(curl -s6m3 icanhazip.com)
+    IPV4_TMP=$(curl -s4m3 icanhazip.com || curl -s4m3 api.ipify.org || curl -s4m3 ipinfo.io/ip)
+    IPV6_TMP=$(curl -s6m3 icanhazip.com || curl -s6m3 api6.ipify.org)
     if [[ -n "$IPV4_TMP" ]]; then
         SERVER_IP="$IPV4_TMP"
     elif [[ -n "$IPV6_TMP" ]]; then
@@ -615,12 +615,16 @@ function install_all_nodes() {
     > "$LINK_FILE"
     echo '{"log":{"level":"info","timestamp":true},"inbounds":[],"outbounds":[{"type":"direct","tag":"direct"},{"type":"block","tag":"block"}]}' | jq . | atomic_jq
 
-    # 4. 端口隔离生成池：确保大满贯五协议端口绝对不冲突！
-    local BASE_PORTS=($(shuf -i 10000-50000 -n 5 | sort -u))
-    # 极低概率下如果 sort -u 导致数量不够 5 个，这里做一个强补救
+    # 4. 端口隔离生成池：智能侦测碰撞，确保大满贯端口绝对纯净！
+    local BASE_PORTS=()
     while [ ${#BASE_PORTS[@]} -lt 5 ]; do
-        BASE_PORTS+=($(shuf -i 50001-60000 -n 1))
-        BASE_PORTS=($(printf "%s\n" "${BASE_PORTS[@]}" | sort -u))
+        local TEMP_PORT=$(shuf -i 10000-60000 -n 1)
+        # 兼容全系 Linux：只要 ss 或 netstat 查出占用，直接物理抛弃
+        if ! ss -tunlp 2>/dev/null | grep -q ":$TEMP_PORT " && ! netstat -tunlp 2>/dev/null | grep -q ":$TEMP_PORT "; then
+            if [[ ! " ${BASE_PORTS[@]} " =~ " ${TEMP_PORT} " ]]; then
+                BASE_PORTS+=($TEMP_PORT)
+            fi
+        fi
     done
     local P1=${BASE_PORTS[0]}
     local P2=${BASE_PORTS[1]}
@@ -663,6 +667,7 @@ function install_all_nodes() {
     systemctl restart vx-core.service
     update_sub
     echo -e "\n${green}✅ 大满贯全量装载完成！防火墙已被打穿，五大神级协议已全部就绪！${plain}"
+    echo -e "\n${yellow}💡 【云大厂架构师警告】: 若您的 VPS 位于 AWS / GCP / Oracle 等云环境，请务必前往云控制台的 [安全组/VPC防火墙] 放行上述端口！否则流量将被物理阻断！${plain}"
     echo -e "👉 ${yellow}提示: 请按回车返回主菜单，直接按【8】提取所有节点链接！${plain}"
     read -p ""
 }
