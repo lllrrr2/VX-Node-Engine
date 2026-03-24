@@ -1358,6 +1358,12 @@ while true; do
     TEMP_UUID=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "vx-$(date +%s)")
     TEMP_PASS=$(openssl rand -hex 8)
     
+    if [[ -f "/etc/velox_tg.conf" ]] && grep -q "GLOBAL_TG_TOKEN" "/etc/velox_tg.conf"; then
+        TG_RADAR_STAT="${green}[TG雷达已激活]✅${plain}"
+    else
+        TG_RADAR_STAT="${yellow}[未配置 TG]⚠️${plain}"
+    fi
+    
     show_dashboard
     echo -e "  ${cyan}1.${plain} ➕ 新增/覆写 VLESS-Reality         ${green}[最稳主力✨]${plain}"
     echo -e "  ${cyan}2.${plain} ➕ 新增/覆写 Hysteria2  (支持自定域名) ${yellow}[暴力加速🚀]${plain}"
@@ -1374,7 +1380,7 @@ while true; do
     echo -e "  ${cyan}8.${plain} 🖨️  一键提取全节点 (明文/Base64/二维码)"
     echo -e "  ${cyan}9.${plain} 🔄 OTA 热更新引擎        ${cyan}10.${plain} 🗑️  ${red}彻底粉碎卸载${plain}"
     echo -e "  ${cyan}t.${plain} 📺 流媒体/AI解锁测试      ${cyan}0.${plain} 🔙 退出终端"
-    echo -e "  ${cyan}s.${plain} 🕵️ 节点防盗哨兵 (查活跃IP/推TG)"
+    echo -e "  ${cyan}s.${plain} 🕵️ 节点防盗哨兵 (查活跃IP/推TG) ${TG_RADAR_STAT}"
     echo -e "  ${cyan}h.${plain} 📖 面板说明与避坑指南"
     echo -e "${cyan}======================================================================${plain}"
     read -p "👉 执行指令 [0-10, b/w/a/t/s/h]: " choice
