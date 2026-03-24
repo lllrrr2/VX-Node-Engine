@@ -1245,6 +1245,113 @@ function test_media_unlock() {
 }
 
 
+# ==================================================
+# 🕵️ 节点防盗哨兵 (全能溯源 & 独立/联动 TG 双驱引擎)
+# ==================================================
+function node_sentinel() {
+    local RUN_MODE=$1 # 接收运行模式(菜单模式或CLI命令行模式)
+    clear
+    echo -e "${cyan}======================================================================${plain}"
+    echo -e "                 🕵️ 节点防盗哨兵 (活跃 IP 物理定位溯源)"
+    echo -e "${cyan}======================================================================${plain}"
+
+    if ! systemctl is-active --quiet vx-core.service; then
+        echo -e "${red}❌ 致命错误：代理核心未运行，无法抓取底层日志！${plain}"
+        [[ "$RUN_MODE" != "cli" ]] && read -p "👉 按回车返回..."
+        return
+    fi
+
+    echo -e "${yellow}>>> 正在对 VX 核心进行极客验尸 (提取过去 24 小时记录)...${plain}"
+    local raw_ips=$(journalctl -u vx-core.service --since "24 hours ago" --no-pager | grep -i "accepted" | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" | grep -v -E "^(127\.|10\.|192\.168\.|172\.)" | sort -u)
+
+    local tg_msg="🚨 <b>[VX 节点防盗哨兵] 人类活动战报</b>\n\n大佬，侦测到以下 IP 正在使用您的节点：\n\n"
+    local has_data=0
+
+    if [[ -z "$raw_ips" ]]; then
+        echo -e "\n${green}✅ 报告：过去 24 小时内未发现任何外部链接，节点如防空洞般清净！${plain}"
+        tg_msg="✅ <b>[VX 节点防盗哨兵]</b> 报告大佬：\n\n过去 24 小时内未发现任何外部链接，当前节点清净，处于满血待命状态！"
+    else
+        has_data=1
+        echo -e "\n${blue} 序号 |      外部 IP      |   归属地 (国家/城市)   |   运营商/组织${plain}"
+        echo -e "${cyan}----------------------------------------------------------------------${plain}"
+        local i=1
+        for ip in $raw_ips; do
+            local info=$(curl -s --connect-timeout 2 "http://ip-api.com/json/$ip?lang=zh-CN")
+            local country=$(echo "$info" | jq -r '.country // "未知"')
+            local city=$(echo "$info" | jq -r '.city // "未知"')
+            local isp=$(echo "$info" | jq -r '.isp // "未知"')
+
+            printf " ${yellow}[%02d]${plain} | %-15s | %-16s | %s\n" "$i" "$ip" "$country/$city" "$isp"
+            tg_msg+="<b>[$i]</b> <code>${ip}</code>\n📍 定位: ${country} - ${city}\n🏢 组织: ${isp}\n\n"
+            let i++
+        done
+        echo -e "${cyan}----------------------------------------------------------------------${plain}"
+        tg_msg+="💀 <i>注：若发现野鸡 IP，请随时 SSH 上机执行 [10] 重置并焦土化物理拔管！</i>"
+    fi
+
+    # ================= 👇 智能 TG 引擎 (兼容 Velox / 独立闭环) 👇 =================
+    echo -e "\n${purple}--- 📡 Telegram 战报推送系统 ---${plain}"
+    TG_CONF="/etc/velox_tg.conf"
+    
+    # 1. 尝试读取现有的全局凭证
+    if [[ -f "$TG_CONF" ]]; then source "$TG_CONF"; fi
+
+    # 2. 如果没读到（说明没装 Velox 或没配置过），触发独立补齐逻辑
+    if [[ -z "$GLOBAL_TG_TOKEN" || -z "$GLOBAL_TG_CHATID" ]]; then
+        echo -e "${yellow}💡 系统未检测到全局 TG 凭证。配置后，可直接向手机推送抓鬼战报！${plain}"
+        echo -e "${green}（注：配置一次即可永久保存，且完美向下兼容 Velox 面板的全局报警模块）${plain}"
+        read -p "👉 是否立刻配置 TG 机器人？(y/n) [默认 n]: " setup_tg
+        if [[ "$setup_tg" == [Yy] ]]; then
+            read -p "🔑 请输入 TG Bot Token: " input_token
+            read -p "💬 请输入 TG Chat ID: " input_chatid
+            
+            if [[ -n "$input_token" && -n "$input_chatid" ]]; then
+                echo -e "${cyan}正在向 Telegram 司令部验证凭证连通性...${plain}"
+                tg_check=$(curl -s4m5 "https://api.telegram.org/bot${input_token}/getMe" || echo "failed")
+                if ! echo "$tg_check" | grep -q '"ok":true'; then
+                    echo -e "${red}❌ 验证失败！Token 错误或网络无法连通。已取消保存。${plain}"
+                else
+                    echo "GLOBAL_TG_TOKEN=\"$input_token\"" > "$TG_CONF"
+                    echo "GLOBAL_TG_CHATID=\"$input_chatid\"" >> "$TG_CONF"
+                    GLOBAL_TG_TOKEN="$input_token"
+                    GLOBAL_TG_CHATID="$input_chatid"
+                    echo -e "${green}✅ 验证通过！司令部已确认身份，凭证已写入系统底层全局池！${plain}"
+                fi
+            else
+                echo -e "${red}❌ 输入为空，已跳过配置。${plain}"
+            fi
+        fi
+    else
+        echo -e "${green}✅ 智能探知到系统存在全局 TG 凭证池，已自动挂载！${plain}"
+    fi
+
+    # 3. 最终推送逻辑
+    if [[ -n "$GLOBAL_TG_TOKEN" && -n "$GLOBAL_TG_CHATID" ]]; then
+        read -p "👉 是否将这份节点战报推送到你的 Telegram？(y/n) [默认 y]: " push_tg
+        push_tg=${push_tg:-y}
+        if [[ "$push_tg" == [Yy] ]]; then
+            curl -s -X POST "https://api.telegram.org/bot${GLOBAL_TG_TOKEN}/sendMessage" \
+                -d chat_id="${GLOBAL_TG_CHATID}" \
+                -d text="${tg_msg}" \
+                -d parse_mode="HTML" > /dev/null
+            echo -e "${green}🚀 战报已成功通过加密信道发射至手机！${plain}"
+        fi
+    fi
+
+    # 命令行模式不要求按回车，丝滑退出
+    if [[ "$RUN_MODE" != "cli" ]]; then
+        echo ""
+        read -p "👉 审查完毕！按回车键返回大屏..."
+    fi
+}
+
+# === 🚀 极客快捷指令拦截器 (CLI 模式) ===
+# 允许用户登录 SSH 后，不进菜单直接敲 `vx log` 或 `vx radar` 查看节点状态
+if [[ "$1" == "log" || "$1" == "radar" || "$1" == "sentinel" ]]; then
+    node_sentinel "cli"
+    exit 0
+fi
+
 # --- 主循环入口 ---
 while true; do
     # 每次刷新菜单，重新配发独立防弹凭证，确保协议间物理隔离
@@ -1267,9 +1374,10 @@ while true; do
     echo -e "  ${cyan}8.${plain} 🖨️  一键提取全节点 (明文/Base64/二维码)"
     echo -e "  ${cyan}9.${plain} 🔄 OTA 热更新引擎        ${cyan}10.${plain} 🗑️  ${red}彻底粉碎卸载${plain}"
     echo -e "  ${cyan}t.${plain} 📺 流媒体/AI解锁测试      ${cyan}0.${plain} 🔙 退出终端"
+    echo -e "  ${cyan}s.${plain} 🕵️ 节点防盗哨兵 (查活跃IP/推TG)"
     echo -e "  ${cyan}h.${plain} 📖 面板说明与避坑指南"
     echo -e "${cyan}======================================================================${plain}"
-    read -p "👉 执行指令 [0-10, b/w/a/t/h]: " choice
+    read -p "👉 执行指令 [0-10, b/w/a/t/s/h]: " choice
     case "$choice" in
         1) install_vless_reality; read -p "👉 按回车返回大屏..." ;;
         2) install_hysteria2; read -p "👉 按回车返回大屏..." ;;
@@ -1282,6 +1390,7 @@ while true; do
         w|W) enable_warp ;;
         a|A) enable_argo ;;
         t|T) test_media_unlock ;;  
+        s|S) node_sentinel ;;
         8) export_all_nodes; read -p "👉 提取完毕，按回车返回..." ;;
         9) update_ota ;;
         10) uninstall_vne; read -p "👉 按回车退出..."; break ;;
