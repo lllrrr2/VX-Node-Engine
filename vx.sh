@@ -1299,11 +1299,14 @@ function node_sentinel() {
                 fi
                 read -p "👉 审查完毕！按回车键返回哨兵菜单..."
                 ;;
-            2)
-                echo -e "\n${cyan}>>> 正在进入动态日志追踪模式 (按 Ctrl+C 退出)...${plain}"
-                TZ="Asia/Shanghai" journalctl -u vx-core.service -f | grep --line-buffered "inbound connection from"
+             2)
+               echo -e "\n${cyan}>>> 正在进入动态日志追踪模式 (按 Ctrl+C 退出)...${plain}"
+               trap 'echo -e "\n安全返回哨兵菜单..."' INT
+               TZ="Asia/Shanghai" journalctl -u vx-core.service -f | grep --line-buffered "inbound connection from"
+                trap - INT
+                sleep 1
                 ;;
-            3)
+             3)
                 if systemctl is-active --quiet vx-tg-sentinel 2>/dev/null; then
                     echo -e "\n${yellow}>>> 正在拆除全自动后台雷达...${plain}"
                     systemctl stop vx-tg-sentinel >/dev/null 2>&1
@@ -1386,16 +1389,17 @@ EOF
                 echo -e "${green}✅ 清理完毕！你的手机当前 IP 只要再产生流量，就会被当作“新面孔”再次触发 TG 报警！${plain}"
                 read -p "👉 按回车返回哨兵菜单..."
                 ;;
-            0) return ;;
+            0) break ;;
             *) echo -e "${red}❌ 无效选择！${plain}"; sleep 1 ;;
         esac
     done
 }
 
 # === 🚀 极客快捷指令拦截器 (CLI 模式) ===
-# 允许用户登录 SSH 后，不进菜单直接敲 `vx log` 或 `vx radar` 查看节点状态
 if [[ "$1" == "log" || "$1" == "radar" || "$1" == "sentinel" ]]; then
-    node_sentinel "cli"
+    trap 'echo -e "\n返回命令行..."' INT
+    TZ="Asia/Shanghai" journalctl -u vx-core.service -f | grep --line-buffered "inbound connection from"
+    trap - INT
     exit 0
 fi
 
