@@ -1288,11 +1288,11 @@ function node_sentinel() {
                     echo -e "${cyan}----------------------------------------------------------------------${plain}"
                     local i=1
                     for ip in $raw_ips; do
-                        local info=$(curl -s --connect-timeout 2 "http://ip-api.com/json/$ip?lang=zh-CN")
-                        local country=$(echo "$info" | jq -r '.country // "未知"')
-                        local region=$(echo "$info" | jq -r '.regionName // ""')
-                        local city=$(echo "$info" | jq -r '.city // ""')
-                        local isp=$(echo "$info" | jq -r '.isp // "未知"')
+                        local info=$(curl -s4m3 "https://ipapi.co/$ip/json/")
+                        local country=$(echo "$info" | jq -r '.country_name // "未知国家"')
+                        local region=$(echo "$info" | jq -r '.region // "未知省份"')
+                        local city=$(echo "$info" | jq -r '.city // "未知城市"')
+                        local isp=$(echo "$info" | jq -r '.org // "未知运营商"')
                         printf " ${yellow}[%02d]${plain} | %-15s | %-20s | %s\n" "$i" "$ip" "$country $region $city" "$isp"
                         let i++
                     done
@@ -1346,13 +1346,18 @@ journalctl -u vx-core.service -f -n 0 | grep --line-buffered "inbound connection
     
     if ! grep -q "^$IP$" /root/.vx_known_ips 2>/dev/null; then
         echo "$IP" >> /root/.vx_known_ips
-        GEO=$(curl -s4m3 "http://ip-api.com/line/$IP?lang=zh-CN&fields=country,regionName,city,isp" | tr '\n' ' ' | sed 's/ $//')
+       INFO=$(curl -s4m3 "https://ipapi.co/$IP/json/")
+        COUNTRY=$(echo "$INFO" | jq -r '.country_name // "未知国家"')
+        REGION=$(echo "$INFO" | jq -r '.region // "未知省份"')
+        CITY=$(echo "$INFO" | jq -r '.city // "未知城市"')
+        ISP=$(echo "$INFO" | jq -r '.org // "未知运营商"')
         
         MSG="🚨 <b>[VX 智能雷达触发]</b>
 大佬，侦测到【全新 IP】接入您的节点！
 
 👉 <b>来源 IP:</b> <code>$IP</code>
-🌍 <b>归属地:</b> $GEO
+🌍 <b>归属地:</b> $COUNTRY $REGION $CITY
+🏢 <b>运营商:</b> $ISP
 ⏰ <b>北京时间:</b> $(date +'%Y-%m-%d %H:%M:%S')
 
 <i>(注：您分享的新用户，或您的宽带动态 IP 变更，都会触发此警报)</i>"
