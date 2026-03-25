@@ -1546,7 +1546,7 @@ while true; do
         h|H) node_sentinel ;;
         i|I) update_ota ;;
         j|J) show_help ;;
-        k|K) uninstall_vne; read -p "👉 按回车退出..."; break ;;
+        k|K) uninstall_vne ;;
         0) break ;;
         *) echo -e "${red}❌ 无效指令，已触发物理拦截机制！${plain}"; sleep 1 ;;
     esac
