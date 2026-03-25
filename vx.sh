@@ -1426,6 +1426,55 @@ if [[ "$1" == "log" || "$1" == "radar" || "$1" == "sentinel" ]]; then
     exit 0
 fi
 
+# === 🔄 降维打击：一键换皮引擎 (重置 UDP 防探针乱码装甲) ===
+function reset_random_sni() {
+    clear
+    echo -e "${cyan}======================================================================${plain}"
+    echo -e "         🔄 正在启动 UDP 暴力层 (Hy2/TUIC) 一键换皮装甲"
+    echo -e "${cyan}======================================================================${plain}"
+
+    if [[ ! -f "$JSON_FILE" ]]; then
+        echo -e "${red}❌ 致命错误: 核心配置不存在，请先装载节点！${plain}"
+        read -p "👉 按回车返回大屏..." && return
+    fi
+
+    if [[ -f "$CERT_DIR/acme.crt" && -f "$CERT_DIR/acme_domain.txt" ]]; then
+        echo -e "${green}✅ 系统检测到您正在使用真实域名证书，自带满血防弹属性，无需换皮！${plain}"
+        read -p "👉 按回车返回大屏..." && return
+    fi
+
+    # 智能侦测：找出旧的乱码 SNI
+    local OLD_SNI=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .tls.server_name' "$JSON_FILE" 2>/dev/null)
+    if [[ -z "$OLD_SNI" || "$OLD_SNI" == "null" ]]; then
+        echo -e "${yellow}⚠️ 未检测到运行中的 Hy2/TUIC 协议，无需换皮。${plain}"
+        read -p "👉 按回车返回大屏..." && return
+    fi
+
+    # 锻造新装甲
+    local NEW_UDP_SNI="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
+    echo -e "${yellow}>>> 正在焦土化剥离旧装甲 [$OLD_SNI]，注入全新随机伪装: ${NEW_UDP_SNI}${plain}"
+
+    # 重新发证
+    generate_cert_dynamic "$NEW_UDP_SNI" >/dev/null 2>&1
+
+    # 原子级 JQ 注入：强行修改 Sing-box 底层配置
+    jq --arg new_sni "$NEW_UDP_SNI" '
+        (.inbounds[] | select(.tag == "hy2-in") | .tls.server_name) = $new_sni |
+        (.inbounds[] | select(.tag == "tuic-in") | .tls.server_name) = $new_sni
+    ' "$JSON_FILE" | atomic_jq
+
+    # 暴力替换底层的节点分享链接和订阅内容
+    sed -i "s/$OLD_SNI/$NEW_UDP_SNI/g" "$LINK_FILE" 2>/dev/null
+    update_sub
+
+    # 物理重启核心
+    systemctl restart vx-core.service
+
+    echo -e "\n${green}🎉 换皮竣工！UDP 协议已满血复活，旧特征已被彻底物理销毁！${plain}"
+    echo -e "${red}⚠️ 警告：请务必返回菜单按【8】提取最新节点，旧节点已阵亡！${plain}"
+    read -p "👉 按回车返回大屏..."
+}
+
 # --- 主循环入口 ---
 while true; do
     # 每次刷新菜单，重新配发独立防弹凭证，确保协议间物理隔离
@@ -1454,6 +1503,7 @@ while true; do
     echo -e "----------------------------------------------------------------------"
     echo -e "  ${cyan}6.${plain} 🌍 附加挂载: Acme 真实证书极速申请"
     echo -e "  ${cyan}7.${plain} 🚀 终极大招: 一键满血装载所有协议"
+    echo -e "  ${cyan}c.${plain} 🔄 附加防御: 一键换皮 (重置 UDP 防探针乱码装甲)"
     echo -e "  ${cyan}b.${plain} ⚡ 底层调优: BBR 狂暴网络加速"
     echo -e "  ${cyan}w.${plain} 🛡️ 附加挂载: WARP 优选解锁 (Netflix/ChatGPT 等)"
     echo -e "  ${cyan}a.${plain} ☁️ 附加挂载: Argo 隧道防封复活甲 (基于 VMess)"
@@ -1464,7 +1514,7 @@ while true; do
     echo -e "  ${cyan}s.${plain} 🕵️ 节点防盗哨兵 (查活跃IP/推TG) ${TG_RADAR_STAT}"
     echo -e "  ${cyan}h.${plain} 📖 面板说明与避坑指南"
     echo -e "${cyan}======================================================================${plain}"
-    read -p "👉 执行指令 [0-10, b/w/a/t/s/h]: " choice
+    read -p "👉 执行指令 [0-10, b/w/a/t/s/h/c]: " choice
     case "$choice" in
         1) install_vless_reality; read -p "👉 按回车返回大屏..." ;;
         2) install_hysteria2; read -p "👉 按回车返回大屏..." ;;
@@ -1473,6 +1523,7 @@ while true; do
         5) install_trojan_reality; read -p "👉 按回车返回大屏..." ;;
         6) apply_acme_cert ;;
         7) install_all_nodes ;;
+        c|C) reset_random_sni ;;
         b|B) enable_bbr ;;
         w|W) enable_warp ;;
         a|A) enable_argo ;;
