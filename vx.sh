@@ -482,7 +482,13 @@ function install_hysteria2() {
     echo -e "\n${yellow}>>> 锻造 Hysteria2 节点：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
     read -p "👉 节点密码 (直接回车随机): " HYS_PASS; HYS_PASS=${HYS_PASS:-$TEMP_PASS}
-    read -p "👉 绑定域名 (直接回车默认 bing.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"bing.com"}
+   read -p "👉 绑定域名 (小白请直接回车，自动注入随机乱码防风控装甲): " INPUT_DOMAIN
+    if [[ -z "$INPUT_DOMAIN" ]]; then
+        SNI_DOMAIN="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
+        echo -e "${yellow}⚠️ 侦测到未输入真实域名，UDP层已自动切换至防探针装甲: ${SNI_DOMAIN}${plain}"
+    else
+        SNI_DOMAIN="$INPUT_DOMAIN"
+    fi
     
     generate_cert_dynamic "$SNI_DOMAIN"
     cat << EOF > /tmp/vx_tmp.json
@@ -506,7 +512,13 @@ function install_tuic_v5() {
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
     read -p "👉 节点 UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
     read -p "👉 节点密码 (直接回车随机): " TUIC_PASS; TUIC_PASS=${TUIC_PASS:-$TEMP_PASS}
-    read -p "👉 绑定域名 (直接回车默认 bing.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"bing.com"}
+    read -p "👉 绑定域名 (小白请直接回车，自动注入随机乱码防风控装甲): " INPUT_DOMAIN
+    if [[ -z "$INPUT_DOMAIN" ]]; then
+        SNI_DOMAIN="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
+        echo -e "${yellow}⚠️ 侦测到未输入真实域名，UDP层已自动切换至防探针装甲: ${SNI_DOMAIN}${plain}"
+    else
+        SNI_DOMAIN="$INPUT_DOMAIN"
+    fi
     generate_cert_dynamic "$SNI_DOMAIN"
   
     cat << EOF > /tmp/vx_tmp.json
@@ -601,17 +613,22 @@ function install_all_nodes() {
         fi
     fi
 
-    # 2. 智能域名与证书准备
-    local COMMON_SNI="apple.com"
+    # 2. 智能域名与证书准备 (双轨防弹装甲)
+    local TCP_SNI="apple.com"  # TCP 协议雷打不动薅大厂羊毛
+    local UDP_SNI=""
+
     if [[ -f "$CERT_DIR/acme.crt" && -f "$CERT_DIR/acme_domain.txt" ]]; then
-        COMMON_SNI=$(cat "$CERT_DIR/acme_domain.txt" 2>/dev/null)
-        echo -e ">>> 🌐 检测到 ACME 证书，自动接管全协议域名: ${green}$COMMON_SNI${plain}"
+        UDP_SNI=$(cat "$CERT_DIR/acme_domain.txt" 2>/dev/null)
+        echo -e ">>> 🌐 检测到 ACME 真实证书，UDP 协议已接管真实域名: ${green}$UDP_SNI${plain}"
     else
-        echo -e ">>> ⚠️ 未部署真实证书，已降级为量子自签与默认伪装: ${green}$COMMON_SNI${plain}"
+        # 核心防呆：没有真实证书，UDP 暴力协议强行生成无特征乱码装甲
+        UDP_SNI="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
+        echo -e ">>> ⚠️ 未部署真实证书！TCP 隐匿层维持伪装: ${green}$TCP_SNI${plain}"
+        echo -e ">>> 🛡️ UDP 暴力层 (Hy2/TUIC) 已强行隔离，注入防探针装甲: ${yellow}$UDP_SNI${plain}"
     fi
 
-    # 统一提前调用一次证书生成逻辑（真实/自签），避免后续重复调用或遗漏
-    generate_cert_dynamic "$COMMON_SNI" >/dev/null 2>&1
+    # 证书发证机只为 UDP 协议服务，避免污染
+    generate_cert_dynamic "$UDP_SNI" >/dev/null 2>&1
 
    # 3. 彻底核爆清空历史数据
     > "$LINK_FILE"
@@ -644,13 +661,13 @@ function install_all_nodes() {
     echo -e "${yellow}>>> [2/5] 正在极速压入 Hysteria2...${plain}"
     local PW2=$TEMP_PASS
     jq --argjson p "$P2" --arg pw "$PW2" --arg crt "$CERT_DIR/cert.crt" --arg key "$CERT_DIR/private.key" '.inbounds += [{"type":"hysteria2","tag":"hy2-in","listen":"::","listen_port":$p,"users":[{"password":$pw}],"tls":{"enabled":true,"alpn":["h3"],"certificate_path":$crt,"key_path":$key}}]' "$JSON_FILE" | atomic_jq
-    echo "hysteria2://${PW2}@${SERVER_IP}:${P2}/?sni=${COMMON_SNI}&alpn=h3&insecure=1#Hys2-VeloX" >> "$LINK_FILE"
+    echo "hysteria2://${PW2}@${SERVER_IP}:${P2}/?sni=${UDP_SNI}&alpn=h3&insecure=1#Hys2-VeloX" >> "$LINK_FILE"
     open_port $P2
 
     echo -e "${yellow}>>> [3/5] 正在极速压入 TUIC v5...${plain}"
     local U3=$TEMP_UUID; local PW3=$TEMP_PASS
     jq --argjson p "$P3" --arg u "$U3" --arg pw "$PW3" --arg crt "$CERT_DIR/cert.crt" --arg key "$CERT_DIR/private.key" '.inbounds += [{"type":"tuic","tag":"tuic-in","listen":"::","listen_port":$p,"users":[{"uuid":$u,"password":$pw}],"congestion_control":"bbr","tls":{"enabled":true,"alpn":["h3"],"certificate_path":$crt,"key_path":$key}}]' "$JSON_FILE" | atomic_jq
-    echo "tuic://${U3}:${PW3}@${SERVER_IP}:${P3}/?sni=${COMMON_SNI}&alpn=h3&congestion_control=bbr&insecure=1#TUIC-VeloX" >> "$LINK_FILE"
+    echo "tuic://${U3}:${PW3}@${SERVER_IP}:${P3}/?sni=${UDP_SNI}&alpn=h3&congestion_control=bbr&insecure=1#TUIC-VeloX" >> "$LINK_FILE"
     open_port $P3
 
     echo -e "${yellow}>>> [4/5] 正在极速压入 VMess-WS...${plain}"
