@@ -1426,7 +1426,7 @@ if [[ "$1" == "log" || "$1" == "radar" || "$1" == "sentinel" ]]; then
     exit 0
 fi
 
-# === 🔄 降维打击：一键换皮引擎 (重置 UDP 防探针乱码装甲) ===
+# === 🔄 降维打击：一键换皮引擎 (重置 UDP 防探针乱码装甲) [修复版] ===
 function reset_random_sni() {
     clear
     echo -e "${cyan}======================================================================${plain}"
@@ -1443,24 +1443,31 @@ function reset_random_sni() {
         read -p "👉 按回车返回大屏..." && return
     fi
 
-    # 智能侦测：找出旧的乱码 SNI
-    local OLD_SNI=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .tls.server_name' "$JSON_FILE" 2>/dev/null)
-    if [[ -z "$OLD_SNI" || "$OLD_SNI" == "null" ]]; then
+    # 智能侦测：检查底层究竟有没有装载这两个协议
+    if ! jq -e '.inbounds[] | select(.tag == "hy2-in" or .tag == "tuic-in")' "$JSON_FILE" >/dev/null 2>&1; then
         echo -e "${yellow}⚠️ 未检测到运行中的 Hy2/TUIC 协议，无需换皮。${plain}"
         read -p "👉 按回车返回大屏..." && return
     fi
 
+    # 从链接文件精准暴力抓取旧 SNI
+    local OLD_SNI=$(grep -E "^(hysteria2|tuic)://" "$LINK_FILE" | awk -F'sni=' '{print $2}' | cut -d'&' -f1 | cut -d'#' -f1 | head -n 1)
+    
+    if [[ -z "$OLD_SNI" ]]; then
+         echo -e "${red}❌ 无法从节点链接中读取旧的 SNI 特征，换皮中断！请尝试重装大满贯。${plain}"
+         read -p "👉 按回车返回大屏..." && return
+    fi
+
     # 锻造新装甲
     local NEW_UDP_SNI="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
-    echo -e "${yellow}>>> 正在焦土化剥离旧装甲 [$OLD_SNI]，注入全新随机伪装: ${NEW_UDP_SNI}${plain}"
+    echo -e "${yellow}>>> 正在焦土化剥离旧装甲 [${OLD_SNI}]，注入全新随机伪装: ${NEW_UDP_SNI}${plain}"
 
     # 重新发证
     generate_cert_dynamic "$NEW_UDP_SNI" >/dev/null 2>&1
 
-    # 原子级 JQ 注入：强行修改 Sing-box 底层配置
+    # 原子级 JQ 注入：如果 JSON 里没有 server_name，这就强行给它怼进去
     jq --arg new_sni "$NEW_UDP_SNI" '
-        (.inbounds[] | select(.tag == "hy2-in") | .tls.server_name) = $new_sni |
-        (.inbounds[] | select(.tag == "tuic-in") | .tls.server_name) = $new_sni
+        (.. | select(type == "object" and .tag == "hy2-in") | .tls.server_name) = $new_sni |
+        (.. | select(type == "object" and .tag == "tuic-in") | .tls.server_name) = $new_sni
     ' "$JSON_FILE" | atomic_jq
 
     # 暴力替换底层的节点分享链接和订阅内容
