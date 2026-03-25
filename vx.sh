@@ -1449,29 +1449,24 @@ function reset_random_sni() {
         read -p "👉 按回车返回大屏..." && return
     fi
 
-    # 从链接文件精准暴力抓取旧 SNI
-    local OLD_SNI=$(grep -E "^(hysteria2|tuic)://" "$LINK_FILE" | awk -F'sni=' '{print $2}' | cut -d'&' -f1 | cut -d'#' -f1 | head -n 1)
-    
-    if [[ -z "$OLD_SNI" ]]; then
-         echo -e "${red}❌ 无法从节点链接中读取旧的 SNI 特征，换皮中断！请尝试重装大满贯。${plain}"
-         read -p "👉 按回车返回大屏..." && return
-    fi
-
-    # 锻造新装甲
+   # 锻造新装甲
     local NEW_UDP_SNI="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
-    echo -e "${yellow}>>> 正在焦土化剥离旧装甲 [${OLD_SNI}]，注入全新随机伪装: ${NEW_UDP_SNI}${plain}"
+    echo -e "${yellow}>>> 正在启动正则焦土化打击，注入全新随机伪装: ${NEW_UDP_SNI}${plain}"
 
     # 重新发证
     generate_cert_dynamic "$NEW_UDP_SNI" >/dev/null 2>&1
 
-    # 原子级 JQ 注入：如果 JSON 里没有 server_name，这就强行给它怼进去
+    # 原子级 JQ 注入：强行修改服务端底层配置
     jq --arg new_sni "$NEW_UDP_SNI" '
         (.. | select(type == "object" and .tag == "hy2-in") | .tls.server_name) = $new_sni |
         (.. | select(type == "object" and .tag == "tuic-in") | .tls.server_name) = $new_sni
     ' "$JSON_FILE" | atomic_jq
 
-    # 暴力替换底层的节点分享链接和订阅内容
-    sed -i "s/$OLD_SNI/$NEW_UDP_SNI/g" "$LINK_FILE" 2>/dev/null
+    # 核心修复点：正则精准轰炸！
+    # 无视旧马甲叫什么名字，只要是 hy2 和 tuic 的链接，强制覆盖 sni 参数！
+    # 同时绝不会误伤 VLESS 的 apple.com！
+    sed -i -E "/^hysteria2:\/\// s/sni=[^&#]+/sni=$NEW_UDP_SNI/g" "$LINK_FILE" 2>/dev/null
+    sed -i -E "/^tuic:\/\// s/sni=[^&#]+/sni=$NEW_UDP_SNI/g" "$LINK_FILE" 2>/dev/null
     update_sub
 
     # 物理重启核心
