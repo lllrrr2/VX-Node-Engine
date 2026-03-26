@@ -482,13 +482,24 @@ function install_hysteria2() {
     echo -e "\n${yellow}>>> 锻造 Hysteria2 节点：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
     read -p "👉 节点密码 (直接回车随机): " HYS_PASS; HYS_PASS=${HYS_PASS:-$TEMP_PASS}
-   read -p "👉 绑定域名 (小白请直接回车，自动注入随机乱码防风控装甲): " INPUT_DOMAIN
+    
+    # === 👇 极客级上下文感知雷达 👇 ===
+    read -p "👉 绑定域名 (小白请直接回车，自动探测ACME或注入随机装甲): " INPUT_DOMAIN
     if [[ -z "$INPUT_DOMAIN" ]]; then
-        SNI_DOMAIN="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
-        echo -e "${yellow}⚠️ 侦测到未输入真实域名，UDP层已自动切换至防探针装甲: ${SNI_DOMAIN}${plain}"
+        # 探测是否存在真实证书
+        if [[ -f "$CERT_DIR/acme.crt" && -f "$CERT_DIR/acme_domain.txt" ]]; then
+            SNI_DOMAIN=$(cat "$CERT_DIR/acme_domain.txt" 2>/dev/null)
+            echo -e "${green}✅ 雷达锁定！侦测到真实防弹装甲，已自动继承 ACME 域名: ${cyan}$SNI_DOMAIN${plain}"
+        else
+            # 保留你原本极其优秀的量子随机防御机制！
+            SNI_DOMAIN="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
+            echo -e "${yellow}⚠️ 未挂载真实证书，UDP层已自动切换至防探针乱码装甲: ${SNI_DOMAIN}${plain}"
+        fi
     else
         SNI_DOMAIN="$INPUT_DOMAIN"
+        echo -e "${green}✅ 手动强控覆盖！已锁定域名: ${cyan}$SNI_DOMAIN${plain}"
     fi
+    # === 👆 雷达探测结束 👆 ===
     
     generate_cert_dynamic "$SNI_DOMAIN"
     cat << EOF > /tmp/vx_tmp.json
@@ -512,15 +523,27 @@ function install_tuic_v5() {
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
     read -p "👉 节点 UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
     read -p "👉 节点密码 (直接回车随机): " TUIC_PASS; TUIC_PASS=${TUIC_PASS:-$TEMP_PASS}
-    read -p "👉 绑定域名 (小白请直接回车，自动注入随机乱码防风控装甲): " INPUT_DOMAIN
+    
+    # === 👇 极客级上下文感知雷达 👇 ===
+    read -p "👉 绑定域名 (小白请直接回车，自动探测ACME或注入随机装甲): " INPUT_DOMAIN
     if [[ -z "$INPUT_DOMAIN" ]]; then
-        SNI_DOMAIN="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
-        echo -e "${yellow}⚠️ 侦测到未输入真实域名，UDP层已自动切换至防探针装甲: ${SNI_DOMAIN}${plain}"
+        # 探测是否存在真实证书
+        if [[ -f "$CERT_DIR/acme.crt" && -f "$CERT_DIR/acme_domain.txt" ]]; then
+            SNI_DOMAIN=$(cat "$CERT_DIR/acme_domain.txt" 2>/dev/null)
+            echo -e "${green}✅ 雷达锁定！侦测到真实防弹装甲，已自动继承 ACME 域名: ${cyan}$SNI_DOMAIN${plain}"
+        else
+            # 保留你原本极其优秀的量子随机防御机制！
+            SNI_DOMAIN="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).net"
+            echo -e "${yellow}⚠️ 未挂载真实证书，UDP层已自动切换至防探针乱码装甲: ${SNI_DOMAIN}${plain}"
+        fi
     else
         SNI_DOMAIN="$INPUT_DOMAIN"
+        echo -e "${green}✅ 手动强控覆盖！已锁定域名: ${cyan}$SNI_DOMAIN${plain}"
     fi
+    # === 👆 雷达探测结束 👆 ===
+    
     generate_cert_dynamic "$SNI_DOMAIN"
-  
+    
     cat << EOF > /tmp/vx_tmp.json
 {"type":"tuic","tag":"tuic-in","listen":"::","listen_port":$LISTEN_PORT,"users":[{"uuid":"$UUID","password":"$TUIC_PASS"}],"congestion_control":"bbr","tls":{"enabled":true,"alpn":["h3"],"certificate_path":"$CERT_DIR/cert.crt","key_path":"$CERT_DIR/private.key"}}
 EOF
