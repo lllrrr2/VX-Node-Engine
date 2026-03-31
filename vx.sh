@@ -156,7 +156,7 @@ fi
     echo -e "🌍  ${yellow}网络物理链路 (IPv6 智能双栈支持):${plain}"
     echo -e "   IPv4地址: ${green}$IPV4${plain}"
     echo -e "   IPv6地址: ${green}$IPV6${plain}"
-    echo -e "   归属节点: ${blue}$LOC - $ISP${plain}"
+    echo -e "   归属: ${blue}$LOC - $ISP${plain}"
     echo -e "----------------------------------------------------------------------"
     echo -e "🧩  ${yellow}高级拓展矩阵:${plain}"
     echo -e "   ACME 证书: $ACME_STAT"
@@ -452,9 +452,9 @@ function apply_acme_cert() {
 # ==================================================
 function install_vless_reality() {
     check_sys && install_core && init_json && get_smart_ip
-    echo -e "\n${yellow}>>> 锻造 VLESS-Reality 节点：${plain}"
+    echo -e "\n${yellow}>>> 锻造 VLESS-Reality ：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
-    read -p "👉 节点 UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
+    read -p "👉  UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
     read -p "👉 伪装域名 (直接回车默认 apple.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"apple.com"}
 
     KEYS=$($BIN_FILE generate reality-keypair)
@@ -474,14 +474,14 @@ EOF
     sed -i '/^vless:\/\//d' "$LINK_FILE" 2>/dev/null
     echo "$SHARE" >> "$LINK_FILE"
     update_sub
-    echo -e "\n${green}✅ VLESS-Reality 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取节点链接！${plain}"
+    echo -e "\n${green}✅ VLESS-Reality 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取链接！${plain}"
 }
 
 function install_hysteria2() {
     check_sys && install_core && init_json && get_smart_ip
-    echo -e "\n${yellow}>>> 锻造 Hysteria2 节点：${plain}"
+    echo -e "\n${yellow}>>> 锻造 Hysteria2 ：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
-    read -p "👉 节点密码 (直接回车随机): " HYS_PASS; HYS_PASS=${HYS_PASS:-$TEMP_PASS}
+    read -p "👉 密码 (直接回车随机): " HYS_PASS; HYS_PASS=${HYS_PASS:-$TEMP_PASS}
     
     # === 👇 极客级上下文感知雷达 👇 ===
     read -p "👉 绑定域名 (小白请直接回车，自动探测ACME或注入随机装甲): " INPUT_DOMAIN
@@ -514,15 +514,15 @@ EOF
     sed -i '/^hysteria2:\/\//d' "$LINK_FILE" 2>/dev/null
     echo "$SHARE" >> "$LINK_FILE"
     update_sub
-    echo -e "\n${green}✅ Hysteria2 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取节点链接！${plain}"
+    echo -e "\n${green}✅ Hysteria2 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取链接！${plain}"
 }
 
 function install_tuic_v5() {
     check_sys && install_core && init_json && get_smart_ip
-    echo -e "\n${yellow}>>> 锻造 TUIC v5 节点：${plain}"
+    echo -e "\n${yellow}>>> 锻造 TUIC v5 ：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
-    read -p "👉 节点 UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
-    read -p "👉 节点密码 (直接回车随机): " TUIC_PASS; TUIC_PASS=${TUIC_PASS:-$TEMP_PASS}
+    read -p "👉  UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
+    read -p "👉 密码 (直接回车随机): " TUIC_PASS; TUIC_PASS=${TUIC_PASS:-$TEMP_PASS}
     
     # === 👇 极客级上下文感知雷达 👇 ===
     read -p "👉 绑定域名 (小白请直接回车，自动探测ACME或注入随机装甲): " INPUT_DOMAIN
@@ -556,14 +556,14 @@ EOF
     sed -i '/^tuic:\/\//d' "$LINK_FILE" 2>/dev/null
     echo "$SHARE" >> "$LINK_FILE"
     update_sub
-    echo -e "\n${green}✅ TUIC v5 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取节点链接！${plain}"
+    echo -e "\n${green}✅ TUIC v5 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取链接！${plain}"
 }
 
 function install_vmess_ws() {
     check_sys && install_core && init_json && get_smart_ip
-    echo -e "\n${yellow}>>> 锻造 VMess-WS (纯明文直连/CDN神盾) 节点：${plain}"
+    echo -e "\n${yellow}>>> 锻造 VMess-WS (纯明文直连/CDN神盾) ：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
-    read -p "👉 节点 UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
+    read -p "👉  UUID (直接回车随机): " UUID; UUID=${UUID:-$TEMP_UUID}
     
     WS_PATH="/vx-$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)"
 
@@ -584,14 +584,14 @@ EOF
     echo "$SHARE" >> "$LINK_FILE"
     update_sub
     echo -e "\n${green}✅ VMess-WS (纯净直连版) 装载完成！现在你可以直接把它套入 Cloudflare CDN。${plain}"
-    echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取节点链接！${plain}"
+    echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取链接！${plain}"
 }
 
 function install_trojan_reality() {
     check_sys && install_core && init_json && get_smart_ip
-    echo -e "\n${yellow}>>> 锻造 Trojan-Reality (NPC进阶神级) 节点：${plain}"
+    echo -e "\n${yellow}>>> 锻造 Trojan-Reality (NPC进阶神级) ：${plain}"
     read -p "👉 监听端口 (直接回车随机): " LISTEN_PORT; LISTEN_PORT=${LISTEN_PORT:-$(shuf -i 10000-60000 -n 1)}
-    read -p "👉 节点密码 (直接回车随机): " TROJAN_PASS; TROJAN_PASS=${TROJAN_PASS:-$TEMP_PASS}
+    read -p "👉 密码 (直接回车随机): " TROJAN_PASS; TROJAN_PASS=${TROJAN_PASS:-$TEMP_PASS}
     read -p "👉 伪装域名 (直接回车默认 apple.com): " SNI_DOMAIN; SNI_DOMAIN=${SNI_DOMAIN:-"apple.com"}
 
     KEYS=$($BIN_FILE generate reality-keypair)
@@ -612,7 +612,7 @@ EOF
     sed -i '/^trojan:\/\//d' "$LINK_FILE" 2>/dev/null
     echo "$SHARE" >> "$LINK_FILE"
     update_sub
-    echo -e "\n${green}✅ Trojan-Reality 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取节点链接！${plain}"
+    echo -e "\n${green}✅ Trojan-Reality 装载完成！${plain}"; echo -e "👉 ${yellow}提示: 请返回主菜单，按【f】提取链接！${plain}"
 }
 
 
@@ -1453,11 +1453,14 @@ EOF
                 ;;
             5)
                 echo -e "\n${cyan}=== ⚙️ TG 机器人全局凭证管理 ===${plain}"
-                if [[ -f "/etc/velox_tg.conf" ]]; then
-                    source "/etc/velox_tg.conf"
-                    echo -e "当前绑定的 Token: ${green}${GLOBAL_TG_TOKEN}${plain}"
-                    echo -e "当前绑定的 Chat ID: ${green}${GLOBAL_TG_CHATID}${plain}"
-                else
+               if [[ -f "/etc/velox_tg.conf" ]]; then
+            source "/etc/velox_tg.conf"
+            # 🚀 开启军用级数据脱敏装甲
+            MASKED_TOKEN="${GLOBAL_TG_TOKEN:0:8}********${GLOBAL_TG_TOKEN: -5}"
+            MASKED_CHATID="${GLOBAL_TG_CHATID:0:3}****${GLOBAL_TG_CHATID: -2}"
+            echo -e "当前绑定的 Token: ${green}${MASKED_TOKEN}${plain}"
+            echo -e "当前绑定的 Chat ID: ${green}${MASKED_CHATID}${plain}"
+        else
                     echo -e "${yellow}⚠️ 当前全局池为空。${plain}"
                 fi
                 echo -e "\n请选择操作："
