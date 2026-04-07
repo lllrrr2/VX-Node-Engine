@@ -217,11 +217,17 @@ function open_port() {
         # 智能侦测拦截：无规则才插入，拒绝垃圾堆叠
         iptables -C INPUT -p tcp --dport $PORT -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport $PORT -j ACCEPT >/dev/null 2>&1
         iptables -C INPUT -p udp --dport $PORT -j ACCEPT 2>/dev/null || iptables -I INPUT -p udp --dport $PORT -j ACCEPT >/dev/null 2>&1
+        if command -v ip6tables &> /dev/null; then
+            ip6tables -C INPUT -p tcp --dport $PORT -j ACCEPT 2>/dev/null || ip6tables -I INPUT -p tcp --dport $PORT -j ACCEPT >/dev/null 2>&1
+            ip6tables -C INPUT -p udp --dport $PORT -j ACCEPT 2>/dev/null || ip6tables -I INPUT -p udp --dport $PORT -j ACCEPT >/dev/null 2>&1
+        fi
+
         # 尝试保存，如果未安装保存插件也不报错，至少保证当次开机可用
         if command -v netfilter-persistent &> /dev/null; then
             netfilter-persistent save >/dev/null 2>&1
         elif command -v service &> /dev/null && [[ -f /etc/redhat-release ]]; then
             service iptables save >/dev/null 2>&1
+            service ip6tables save >/dev/null 2>&1 # 顺手把 CentOS 的 v6 也保存一下
         fi
     fi
 }
