@@ -1,0 +1,60 @@
+name: VX Ultimate Core Radar
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # 每天北京时间上午 10 点自动巡检
+  workflow_dispatch: # 允许手动测试
+
+jobs:
+  scan_and_alert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📡 启动全维度赛博雷达 (扫描四大祖祠)
+        id: scanner
+        run: |
+          # 把四大神级仓库列入监控名单
+          REPOS=(
+            "SagerNet/sing-box"
+            "apernet/hysteria"
+            "EAIMTY/tuic"
+            "XTLS/Xray-core"
+          )
+          
+          ALERT_MSG=""
+          CURRENT_TIME=$(date +%s)
+          
+          # 遍历扫描
+          for REPO in "${REPOS[@]}"; do
+            LATEST_INFO=$(curl -s "https://api.github.com/repos/$REPO/releases/latest")
+            LATEST_TAG=$(echo "$LATEST_INFO" | jq -r .tag_name)
+            PUBLISHED_AT=$(echo "$LATEST_INFO" | jq -r .published_at)
+            
+            # 过滤掉无效数据
+            if [ "$LATEST_TAG" != "null" ] && [ -n "$PUBLISHED_AT" ]; then
+              PUBLISH_TIME=$(date -d "$PUBLISHED_AT" +%s)
+              DIFF=$((CURRENT_TIME - PUBLISH_TIME))
+              
+              # 侦测 24 小时内的新变动
+              if [ "$DIFF" -le 86400 ]; then
+                 ALERT_MSG="${ALERT_MSG}%0A📦 <b>$REPO</b> ➡️ <code>$LATEST_TAG</code>"
+              fi
+            fi
+          done
+          
+          if [ -n "$ALERT_MSG" ]; then
+            echo "new_update=true" >> $GITHUB_ENV
+            echo "update_details=$ALERT_MSG" >> $GITHUB_ENV
+          else
+            echo "new_update=false" >> $GITHUB_ENV
+            echo "四方宇宙风平浪静，雷达静默。"
+          fi
+
+      - name: 🚀 发送 Telegram 全局战报
+        if: env.new_update == 'true'
+        run: |
+          MSG="🚨 <b>[VX 极客全维度雷达预警]</b>%0A大佬，侦测到代理圈上游神级仓库发生异动，有新版本发布！%0A${{ env.update_details }}%0A%0A👉 <i>提示：若 SagerNet/sing-box 更新，请登录终端按【i】进行 OTA 热重载；若是其他底层协议更新，请静候 Sing-box 母舰合并同步！</i>"
+          
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TG_CHAT_ID }}" \
+            -d text="$MSG" \
+            -d parse_mode="HTML"

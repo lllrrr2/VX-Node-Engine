@@ -1,7 +1,7 @@
 #!/bin/bash
 # =======================================================
 # 项目: Velox Node Engine (VX) - 极简高阶代理核心生成器
-# 版本: V5.0 (10/10满分原子版：五大协议全解锁 + 智能双栈解锁)
+# 版本: V5.1 (10/10满分原子版：五大协议全解锁 + 智能双栈解锁)
 # =======================================================
 
 
@@ -27,7 +27,7 @@ JSON_FILE="$CONF_DIR/config.json"
 LINK_FILE="$CONF_DIR/links.txt"
 SERVICE_FILE="/etc/systemd/system/vx-core.service"
 SCRIPT_URL="https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh"
-VX_VERSION="5.0"
+VX_VERSION="5.1"
 
 
 [[ $EUID -ne 0 ]] && echo -e "${red}❌ 致命错误: 请使用 root 用户运行此引擎！${plain}" && exit 1
@@ -132,7 +132,22 @@ fi
     else
         UPDATE_MSG="${green}✅ 最新版 (v${VX_VERSION})${plain}"
     fi
+    # === 👇 极客新增：Sing-box 内核极速防卡死探针 👇 ===
+    if [[ -x "/usr/local/bin/sing-box" ]]; then
+        SB_CORE_VER=$(/usr/local/bin/sing-box version 2>/dev/null | head -n 1 | awk '{print $3}')
+        [[ -z "$SB_CORE_VER" ]] && SB_CORE_VER="未知"
+    else
+        SB_CORE_VER="未安装"
+    fi
 
+    # 限时 1.5 秒抓取线上版本，超时立刻放弃，绝不卡死面板！
+    SB_LATEST_VER=$(curl -s --connect-timeout 1 -m 1.5 "https://api.github.com/repos/SagerNet/sing-box/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v?([^"]+)".*/\1/')
+
+   UPDATE_TIPS=""
+    if [[ -n "$SB_LATEST_VER" && "$SB_CORE_VER" != "未安装" && "$SB_CORE_VER" != "$SB_LATEST_VER" ]]; then
+        UPDATE_TIPS=" ${lyellow}🔥 发现新内核 v${SB_LATEST_VER}，请按 [i] 热更新！${plain}"
+    fi
+  
     echo -e "${cyan}██╗   ██╗███████╗██╗     ██████╗ ██╗  ██╗${plain}"
     echo -e "${cyan}██║   ██║██╔════╝██║    ██╔═══██╗╚██╗██╔╝${plain}"
     echo -e "${blue}██║   ██║█████╗  ██║    ██║   ██║ ╚███╔╝ ${plain}"
@@ -164,7 +179,7 @@ fi
     echo -e "   Argo 隧道: $ARGO_STAT"
     echo -e "   动态订阅 : $SUB_STAT"
     echo -e "----------------------------------------------------------------------"
-    echo -e "🛡️  ${yellow}代理引擎矩阵 (Sing-box 状态: $SB_STAT):${plain}"
+    echo -e "🛡️  ${yellow}代理引擎矩阵 (Sing-box 状态: $SB_STAT ${plain}|${yellow} 内核: ${cyan}v${SB_CORE_VER}${plain})${UPDATE_TIPS}${yellow}:${plain}"
     echo -e "  $VL_STAT VLESS-Reality | 端口: ${cyan}$VL_PORT${plain} | 伪装: ${purple}$VL_SNI${plain}"
     echo -e "  $HY2_STAT Hysteria-2    | 端口: ${cyan}$HY2_PORT${plain} | 证书: ${purple}$HY2_SNI${plain}"
     echo -e "  $TUIC_STAT TUIC v5       | 端口: ${cyan}$TUIC_PORT${plain} | 证书: ${purple}$TUIC_SNI${plain}"
@@ -217,11 +232,17 @@ function open_port() {
         # 智能侦测拦截：无规则才插入，拒绝垃圾堆叠
         iptables -C INPUT -p tcp --dport $PORT -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport $PORT -j ACCEPT >/dev/null 2>&1
         iptables -C INPUT -p udp --dport $PORT -j ACCEPT 2>/dev/null || iptables -I INPUT -p udp --dport $PORT -j ACCEPT >/dev/null 2>&1
+        if command -v ip6tables &> /dev/null; then
+            ip6tables -C INPUT -p tcp --dport $PORT -j ACCEPT 2>/dev/null || ip6tables -I INPUT -p tcp --dport $PORT -j ACCEPT >/dev/null 2>&1
+            ip6tables -C INPUT -p udp --dport $PORT -j ACCEPT 2>/dev/null || ip6tables -I INPUT -p udp --dport $PORT -j ACCEPT >/dev/null 2>&1
+        fi
+
         # 尝试保存，如果未安装保存插件也不报错，至少保证当次开机可用
         if command -v netfilter-persistent &> /dev/null; then
             netfilter-persistent save >/dev/null 2>&1
         elif command -v service &> /dev/null && [[ -f /etc/redhat-release ]]; then
             service iptables save >/dev/null 2>&1
+            service ip6tables save >/dev/null 2>&1 # 顺手把 CentOS 的 v6 也保存一下
         fi
     fi
 }
