@@ -20,7 +20,8 @@
 
 ---
 
-## 💡 简介
+💡 简介
+---
 
 Velox Node Engine (VX) 是一款专为极客打造的轻量化、全自动化代理节点部署引擎。基于最新前沿的防封锁理念，它采用全动态 JSON 构建技术与单一 Sing-box 纯净内核，彻底告别多内核冲突与系统垃圾。在主流 Linux 环境下都能实现**“一键点火、全量装载、无痕粉碎”**。
 
@@ -29,29 +30,28 @@ Velox Node Engine (VX) 是一款专为极客打造的轻量化、全自动化代
 本引擎底层已注入极客级“双轨嗅探”与“环境隔离”逻辑，完美适配以下高阶环境：
 
 * **🐧 主流 Linux 发行版通杀：**
-  * **Ubuntu 18.04+（原生满血调优，最高优先级推荐！）**
-  * Debian 9+（极致兼容，完美丝滑）
-  * CentOS 7+ / AlmaLinux / Rocky Linux（智能切轨，底层包管理器与防火墙自适应）
-  * *注：极度阉割版 Alpine 或无 systemd 守护进程的灵车系统可能会遭遇“降维打击”，请谨慎使用。*
+    * **Ubuntu 18.04+（原生满血调优，最高优先级推荐！）**
+    * Debian 9+（极致兼容，完美丝滑）
+    * CentOS 7+ / AlmaLinux / Rocky Linux（智能切轨，底层包管理器与防火墙自适应）
+    * *注：极度阉割版 Alpine 或无 systemd 守护进程的灵车系统可能会遭遇“降维打击”，请谨慎使用。*
 
 * **☁️ 顶级云大厂 VPC 穿透支持：**
-  * Google Cloud Platform (GCP)
-  * Amazon Web Services (AWS)
-  * Oracle Cloud (甲骨文云)
-  * Azure / 阿里云国际 / 腾讯云国际
-  * *极客亮点：引擎内置了 1:1 NAT 物理出口嗅探技术，彻底解决云大厂内网 IP 迷失的死穴。只需在云服务商的网页控制台放行对应安全组端口，即可满血复活。*
+    * Google Cloud Platform (GCP)
+    * Amazon Web Services (AWS)
+    * Oracle Cloud (甲骨文云)
+    * Azure / 阿里云国际 / 腾讯云国际
+    * *极客亮点：引擎内置了 1:1 NAT 物理出口嗅探技术，彻底解决云大厂内网 IP 迷失的死穴。只需在云服务商的网页控制台放行对应安全组端口，即可满血复活。*
 
 * **💻 硬件架构全量覆盖：**
-  * `x86_64` (AMD/Intel 传统架构)
-  * `aarch64` / `arm64` (完美发挥甲骨文等 ARM 神机架构的核动力性能，内核自动适配下载)
+    * `x86_64` (AMD/Intel 传统架构)
+    * `aarch64` / `arm64` (完美发挥甲骨文等 ARM 神机架构的核动力性能，内核自动适配下载)
 
 * **🍎 关于 macOS 的防呆警告：**
-  * **不支持原生直连运行！** VX 引擎深度依赖 Linux 内核的 `systemd` 进程树与网络栈。如果您是高贵的 Mac 用户，请开个 Ubuntu 虚拟机，或者使用 Docker 进行环境隔离部署。
+    * **不支持原生直连运行！** VX 引擎深度依赖 Linux 内核的 `systemd` 进程树与网络栈。如果您是高贵的 Mac 用户，请开个 Ubuntu 虚拟机，或者使用 Docker 进行环境隔离部署。
 
 ---
 
 ## ✨ V5.0究极进化亮点
-
 * 🛡️ **Argo 双轨引擎重构**：完美打通 Cloudflare Zero Trust 固定隧道，支持企业级内网穿透保活。
 * 👻 **幽灵节点粉碎技术**：手写底层 Base64 智能解密安检，彻底消灭历史残留死链。
 * 🧠 **智能域名嗅探**：临时隧道采用 `tail` 级动态抓取，永远只提取最新鲜的存活域名。
@@ -85,19 +85,24 @@ Velox Node Engine (VX) 是一款专为极客打造的轻量化、全自动化代
 
 ---
 
+
 ## 🛠️ 召唤指令 (一键极速部署)
 
 在你的终端执行以下神圣指令，开启终极穿透之旅 (请务必使用 **root** 用户运行)：
 
 ```bash
-bash <(curl -Ls [https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh](https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh))
+bash <(curl -Ls https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh)
 ```
-或者备用线路：
+或者
+
 ```bash
-bash <(wget -qO- [https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh](https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh))
+bash <(wget -qO- https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh)
 ```
 
-> 💡 **极简交互**：安装完成后，以后在终端随时输入 `vx` 即可瞬间唤醒交互监控大屏！
+---
+
+
+> 💡 **极简召唤提示**：安装完成后，以后在任何目录只需输入 `vx` 即可瞬间唤醒交互监控大屏！
 
 ---
 
@@ -106,32 +111,26 @@ bash <(wget -qO- [https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engin
 如果你在修改源码、更新面板时遇到语法错误，导致 `vx` 命令彻底瘫痪（面板无法弹出）；或者你想**秒级强制拉取** GitHub 上的最新代码（穿透 CDN 缓存），请在 VPS 终端直接执行以下终极抢救指令：
 
 ```bash
-curl -sL "[https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh?v=$(date](https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh?v=$(date) +%s)" -o /usr/local/bin/vx && chmod +x /usr/local/bin/vx
+curl -sL "https://raw.githubusercontent.com/pwenxiang51-wq/VX-Node-Engine/main/vx.sh?v=$(date +%s)" -o /usr/local/bin/vx && chmod +x /usr/local/bin/vx
 ```
-*💡 提示：执行完毕后不会有任何提示。此时重新输入 `vx` 回车，你的大屏面板即可满血复活！*
+💡 提示：执行完毕后不会有任何提示。此时重新输入 vx 回车，你的大屏面板即可满血复活！
 
 ---
 
-> ⚠️ **NAT 服务器用户特别提示：**
-> 如果您使用的是端口受限的 NAT 服务器，请不要使用 **[6] 一键大满贯** 功能（因为其采用全随机端口冲突）。请使用菜单 **[1] - [5] 独立安装**，并在提示时手动输入您被分配的可用端口。或者直接使用 **[e] Argo 隧道** 进行无视端口的内网穿透！
+⚠️ NAT 服务器用户特别提示：
+如果您使用的是端口受限的 NAT 服务器，请不要使用 [6] 一键大满贯 功能（因为其采用全随机端口）。请使用菜单 [1] - [5] 独立安装，并在提示时手动输入您被分配的可用端口。或者直接使用 [e] Argo 隧道 进行无视端口的内网穿透！
 
 ---
 
 ## ☕ 赞赏与支持
 
-<details>
-<summary><b>点击展开：赞赏与支持 ☕️</b></summary>
-<br>
-开源不易，如果 Velox 面板让你的折腾之旅变得更加优雅，为你节省了宝贵的时间，请务必在右上角给我点一个 <b>Star ⭐️</b>！你的点赞是我持续维护的唯一动力。
+开源不易，如果 Velox 面板让你的折腾之旅变得更加优雅，为你节省了宝贵的时间，请务必在右上角给我点一个 **Star ⭐️**！你的点赞是我持续维护的唯一动力。
 
 如果大佬觉得项目超赞，欢迎通过微信扫码请我喝杯冰美式，感激不尽！🚀
 
 <div align="center">
   <img src="assets/donate.png" width="300" />
-  <br>
-  <p><i>“感谢 velox 请喝咖啡！”</i></p>
 </div>
-</details>
 
 ---
 
